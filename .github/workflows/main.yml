@@ -16,13 +16,29 @@ jobs:
           distribution: temurin
           java-version: 25
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.6.0"
+
       - name: Build
         run: |
-          chmod +x gradlew
-          ./gradlew build
+          FILE=$(find . -name build.gradle | head -1)
+          if [ -z "$FILE" ]; then
+            echo "build.gradle not found! Files in repo:"
+            find . -not -path './.git/*' | head -50
+            exit 1
+          fi
+          DIR=$(dirname "$FILE")
+          echo "Building in $DIR"
+          cd "$DIR"
+          gradle build
+          echo "LIBS=$DIR/build/libs" >> $GITHUB_ENV
 
       - name: Upload mod jar
         uses: actions/upload-artifact@v4
         with:
           name: paypopup-mod
-          path: build/libs/*[!s].jar
+          path: |
+            ${{ env.LIBS }}/*.jar
+            !${{ env.LIBS }}/*-sources.jar
