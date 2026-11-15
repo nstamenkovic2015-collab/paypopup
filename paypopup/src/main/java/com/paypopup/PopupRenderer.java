@@ -3,7 +3,7 @@ package com.paypopup;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
@@ -66,7 +66,7 @@ public final class PopupRenderer {
     }
 
     /** Draws the popup on the HUD every frame. */
-    public static void render(GuiGraphics g, DeltaTracker delta) {
+    public static void render(GuiGraphicsExtractor g, DeltaTracker delta) {
         if (current == null) return;
 
         Minecraft mc = Minecraft.getInstance();
@@ -75,7 +75,7 @@ public final class PopupRenderer {
         float t = age + partial;
         float scale = PayPopupConfig.get().scale;
 
-        int screenW = g.guiWidth();
+        int screenW = mc.getWindow().getGuiScaledWidth();
         int boxW = 180;
         int boxH = 52;
 
@@ -118,7 +118,7 @@ public final class PopupRenderer {
 
         // ---------- Title ----------
         Component title = Component.translatable("paypopup.title");
-        g.drawCenteredString(font, title, 0, 7, withAlpha(0xFFD700, a));
+        g.centeredText(font, title, 0, 7, withAlpha(0xFFD700, a));
 
         // ---------- Amount (with a "pop" effect) ----------
         float pop = 1f;
@@ -130,12 +130,12 @@ public final class PopupRenderer {
         g.pose().pushMatrix();
         g.pose().translate(0, 24);
         g.pose().scale(1.6f * pop, 1.6f * pop);
-        g.drawCenteredString(font, amount, 0, -4, withAlpha(0x55FF55, a));
+        g.centeredText(font, amount, 0, -4, withAlpha(0x55FF55, a));
         g.pose().popMatrix();
 
         // ---------- Sender ----------
         Component from = Component.translatable("paypopup.from", current.sender());
-        g.drawCenteredString(font, from, 0, 38, withAlpha(0xCCCCCC, a));
+        g.centeredText(font, from, 0, 38, withAlpha(0xCCCCCC, a));
 
         // ---------- Coins ----------
         for (Coin c : COINS) c.draw(g, partial, a);
@@ -213,7 +213,7 @@ public final class PopupRenderer {
             return --life <= 0;
         }
 
-        void draw(GuiGraphics g, float partial, int alpha) {
+        void draw(GuiGraphicsExtractor g, float partial, int alpha) {
             int px = (int) Mth.lerp(partial, prevX, x);
             int py = (int) Mth.lerp(partial, prevY, y);
             int a = (int) (alpha * Math.min(1f, life / (float) maxLife * 2f));
