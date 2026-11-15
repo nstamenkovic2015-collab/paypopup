@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "paypopup",
+  "version": "${version}",
+  "name": "Pay Popup",
+  "description": "Shows an animated popup with sound whenever someone pays you (/pay) on a server.",
+  "authors": ["You"],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/paypopup/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.paypopup.PayPopupClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

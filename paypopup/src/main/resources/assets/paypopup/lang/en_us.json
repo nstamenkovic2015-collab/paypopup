@@ -1,0 +1,7 @@
+{
+  "paypopup.title": "PAYMENT RECEIVED!",
+  "paypopup.from": "from %s",
+  "paypopup.command.test": "Showing a test popup...",
+  "paypopup.command.toggle.on": "Pay Popup is now ON",
+  "paypopup.command.toggle.off": "Pay Popup is now OFF"
+}
