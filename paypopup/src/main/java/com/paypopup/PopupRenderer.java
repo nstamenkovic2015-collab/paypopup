@@ -33,8 +33,13 @@ import java.util.Random;
  *   10    $50B+    BLACK HOLE       (classic / quasar with jets / purple void)
  *   11    $100B+   MULTIVERSE COLLAPSE: two universes collide, a black hole forms,
  *                  eats every planet, then collapses into a BIG BANG
+ *   12    $500B+   DARK MATTER EVENT: two multiverses collide, a dark matter web spreads
+ *                  across the screen, a dark core swallows everything, implodes and bursts
+ *   13    $1T+     OMNIVERSE COLLISION: two omniverses collide, reality cracks and shatters,
+ *                  and THE CREATION is born: a giant rainbow mandala that folds into a big bang
  *
- * Every popup also gets one of 5 colour themes: gold, emerald, diamond, amethyst, redstone.
+ * Every popup also gets a random colour theme (gold, emerald, diamond, amethyst, redstone),
+ * a random box style (classic, neon, royal, glitch) and a random variant (5 per tier).
  */
 public final class PopupRenderer {
 
@@ -43,24 +48,27 @@ public final class PopupRenderer {
     // =====================================================================
     private static final double[] MIN_AMOUNT = {
             0, 100_000d, 1_000_000d, 5_000_000d, 10_000_000d, 100_000_000d, 500_000_000d,
-            1_000_000_000d, 10_000_000_000d, 25_000_000_000d, 50_000_000_000d, 100_000_000_000d
+            1_000_000_000d, 10_000_000_000d, 25_000_000_000d, 50_000_000_000d, 100_000_000_000d,
+            500_000_000_000d, 1_000_000_000_000d
     };
     private static final String[][] TITLES = {
-            {"PAYMENT RECEIVED", "PAYMENT RECEIVED", "PAYMENT RECEIVED"},
-            {"NICE!", "SWEET!", "NICE ONE!"},
-            {"BIG PAYMENT!", "BIG MONEY!", "BALLER!"},
-            {"MONEY RAIN!", "COIN STORM!", "DIAMOND RAIN!"},
-            {"HUGE!!", "MASSIVE!!", "HUGE!!"},
-            {"INSANE!!!", "UNREAL!!!", "INSANE!!!"},
-            {"TORNADO PAYMENT!!", "FIRE TORNADO!!", "MONEY TORNADO!!"},
-            {"LEGENDARY!!!!", "METEOR SHOWER!!!!", "THUNDER STRIKE!!!!"},
-            {"GOD TIER PAYMENT", "GOD TIER PAYMENT", "GOD TIER PAYMENT"},
-            {"GALACTIC PAYMENT", "GALACTIC PAYMENT", "GALACTIC PAYMENT"},
+            {"PAYMENT RECEIVED", "PAYMENT RECEIVED", "KA-CHING!", "CHA-CHING!", "MONEY IN!"},
+            {"NICE!", "SWEET!", "NICE ONE!", "LOVELY!", "XP BOOST!"},
+            {"BIG PAYMENT!", "BIG MONEY!", "BALLER!", "BIG LOVE!", "LEVEL UP!"},
+            {"MONEY RAIN!", "COIN STORM!", "DIAMOND RAIN!", "LOVE RAIN!", "XP STORM!"},
+            {"HUGE!!", "MASSIVE!!", "SPOTLIGHT!!", "HUGE!!", "JACKPOT!!"},
+            {"INSANE!!!", "UNREAL!!!", "INSANE!!!", "ABSURD!!!", "JACKPOT!!!"},
+            {"TORNADO PAYMENT!!", "FIRE TORNADO!!", "MONEY TORNADO!!", "ICE TORNADO!!", "RAINBOW TORNADO!!"},
+            {"LEGENDARY!!!!", "METEOR SHOWER!!!!", "THUNDER STRIKE!!!!", "AURORA!!!!", "SUPERNOVA!!!!"},
+            {"GOD TIER PAYMENT"},
+            {"GALACTIC PAYMENT"},
             {"BLACK HOLE PAYMENT", "QUASAR PAYMENT", "VOID PAYMENT"},
-            {"MULTIVERSE COLLAPSE", "MULTIVERSE COLLAPSE", "MULTIVERSE COLLAPSE"},
+            {"MULTIVERSE COLLAPSE"},
+            {"DARK MATTER EVENT"},
+            {"OMNIVERSE COLLISION"},
     };
-    private static final int[] COIN_COUNT = {14, 22, 35, 40, 55, 80, 90, 120, 180, 200, 220, 260};
-    private static final float[] SHAKE = {0, 0, 1f, 1f, 2f, 4f, 6f, 7f, 12f, 14f, 18f, 22f};
+    private static final int[] COIN_COUNT = {14, 22, 35, 40, 55, 80, 90, 120, 180, 200, 220, 260, 300, 340};
+    private static final float[] SHAKE = {0, 0, 1f, 1f, 2f, 4f, 6f, 7f, 12f, 14f, 18f, 22f, 24f, 26f};
 
     /** Colour themes: {main, light, dark}. */
     private static final int[][] THEMES = {
@@ -73,7 +81,7 @@ public final class PopupRenderer {
 
     // Particle kinds
     private static final int SPARK = 0, COIN = 1, GEM = 2, STAR = 3, CONFETTI = 4, BILL = 5,
-            TEXT = 6, METEOR = 7, EMBER = 8;
+            TEXT = 6, METEOR = 7, EMBER = 8, HEART = 9, ORB = 10, SHARD = 11;
 
     private static final int SLIDE_IN_TICKS = 10;
     private static final int SLIDE_OUT_TICKS = 8;
@@ -91,7 +99,7 @@ public final class PopupRenderer {
     private static final Random RANDOM = new Random();
 
     private static PayParser.Payment current;
-    private static int tier, variant, theme;
+    private static int tier, variant, theme, boxStyle;
     private static int age, holdTicks;
     private static float popupY;
     private static int screenW = 320, screenH = 240;
@@ -112,14 +120,18 @@ public final class PopupRenderer {
     private static void start(PayParser.Payment p) {
         current = p;
         tier = tierOf(p.amount());
-        variant = RANDOM.nextInt(3);
+        variant = RANDOM.nextInt(5);
         theme = RANDOM.nextInt(THEMES.length);
+        boxStyle = RANDOM.nextInt(4);
         age = 0;
         holdTicks = Math.round((PayPopupConfig.get().displaySeconds + Math.min(tier, 8) * 0.5f) * 20);
         if (tier == 6) holdTicks = Math.max(holdTicks, 170);
         if (tier == 9) holdTicks = Math.max(holdTicks, 200);
         if (tier == 10) holdTicks = Math.max(holdTicks, 190);
         if (tier == 11) holdTicks = Math.max(holdTicks, 330);
+        if (tier == 12) holdTicks = Math.max(holdTicks, 380);
+        if (tier == 13) holdTicks = Math.max(holdTicks, 460);
+        if (tier == 7 && variant == 4) holdTicks = Math.max(holdTicks, 140);
         PLANETS.clear();
         BOLTS.clear();
         bhActive = false;
@@ -178,6 +190,17 @@ public final class PopupRenderer {
             for (int i = 0; i < pieces; i++) confetti(sw);
         }
 
+        // ---- party poppers & confetti cannons (small tiers) ----
+        if (tier <= 3 && sinceLand == 2) {
+            popper(cx - 90, cy, -1, 12 + tier * 4);
+            popper(cx + 90, cy, 1, 12 + tier * 4);
+        }
+        if (tier >= 1 && tier <= 5 && (sinceLand == 4 || (tier >= 3 && sinceLand == 24))) {
+            cannon(0, sh, 1, 20 + tier * 6);
+            cannon(sw, sh, -1, 20 + tier * 6);
+            playSound(SoundEvents.FIREWORK_ROCKET_LAUNCH, 1.2f);
+        }
+
         // ---- tier specials ----
         switch (tier) {
             case 1 -> {
@@ -199,10 +222,13 @@ public final class PopupRenderer {
                 tickLegendary(holding, sinceLand, sw, sh, 0);
                 tickLegendary(holding, sinceLand, sw, sh, 1);
                 tickLegendary(holding, sinceLand, sw, sh, 2);
+                tickLegendary(holding, sinceLand, sw, sh, 3);
             }
             case 9 -> tickGalaxy(sinceLand, sw, sh);
             case 10 -> tickBlackHole(sinceLand, holding, sw, sh);
             case 11 -> tickMultiverse(sinceLand, holding, sw, sh);
+            case 12 -> tickDarkMatter(sinceLand, holding, sw, sh);
+            case 13 -> tickOmniverse(sinceLand, holding, sw, sh);
             default -> { }
         }
 
@@ -242,7 +268,8 @@ public final class PopupRenderer {
         float sinceLand = t - SLIDE_IN_TICKS;
         float outStart = SLIDE_IN_TICKS + holdTicks;
         float scale = boxScale();
-        String title = TITLES[tier][variant];
+        String title = TITLES[tier][variant % TITLES[tier].length];
+        if (tier == 13 && sinceLand >= omShatter()) title = "THE CREATION";
         int boxW = Math.max(180 + Math.min(tier, 8) * 14, (int) (font.width(title) * 1.45f) + 24);
         int boxH = 56 + Math.min(tier, 8) * 4;
         int[] th = THEMES[theme];
@@ -270,6 +297,16 @@ public final class PopupRenderer {
         if (tier == 9) renderGalaxies(g, t, sinceLand, alpha, sw, sh);
         if (tier == 10) renderBlackHole(g, t, sw, sh);
         if (tier == 11) renderMultiverse(g, t, sinceLand, alpha, sw, sh);
+        if (tier == 12) renderDarkMatter(g, t, sinceLand, alpha, sw, sh);
+        if (tier == 13) renderOmniverse(g, t, sinceLand, alpha, sw, sh);
+        if ((tier == 7 && variant == 3) || tier == 8) renderAurora(g, t, sinceLand, alpha, sw);
+        if (tier == 7 && variant == 4) renderSupernova(g, t, sinceLand, alpha, sw, sh);
+        if (tier == 8) godRays(g, t, sinceLand, alpha, sw, sh);
+        if ((tier == 4 || tier == 5 || tier == 8) && sinceLand >= 0) {
+            float sa = Mth.clamp(sinceLand / 10f, 0, 1) * alpha;
+            spotlight(g, sw * 0.12f, sh, -1.57f + 0.55f * Mth.sin(t * 0.035f), sh * 1.2f, color(t, 0), sa);
+            spotlight(g, sw * 0.88f, sh, -1.57f - 0.55f * Mth.sin(t * 0.035f + 1), sh * 1.2f, color(t, 90), sa);
+        }
         drawBolts(g);
 
         // ---------- landing flash ----------
@@ -319,7 +356,22 @@ public final class PopupRenderer {
             float sb = sinceLand - mvBang();
             if (sb >= 0 && sb < 30) shake = Math.max(shake, 20f * (1 - sb / 30f));
         }
-        if ((tier == 10 || tier == 11) && bhActive) shake = Math.max(shake, 1.5f + bhRadius * 0.04f);
+        if (tier == 12) {
+            float sc = sinceLand - dmCollide();
+            if (sc >= 0 && sc < 45) shake = Math.max(shake, 24f * (1 - sc / 45f));
+            float sr = sinceLand - dmRelease();
+            if (sr >= 0 && sr < 30) shake = Math.max(shake, 22f * (1 - sr / 30f));
+            if (sc > 0 && sinceLand < dmRelease()) shake = Math.max(shake, 2.5f);
+        }
+        if (tier == 13) {
+            float sc = sinceLand - omCollide();
+            if (sc >= 0 && sc < 45) shake = Math.max(shake, 26f * (1 - sc / 45f));
+            float ss = sinceLand - omShatter();
+            if (ss >= 0 && ss < 30) shake = Math.max(shake, 26f * (1 - ss / 30f));
+            float sb = sinceLand - omBang();
+            if (sb >= 0 && sb < 30) shake = Math.max(shake, 24f * (1 - sb / 30f));
+        }
+        if ((tier == 10 || tier == 11 || tier == 12) && bhActive) shake = Math.max(shake, 1.5f + bhRadius * 0.04f);
         float sx = (RANDOM.nextFloat() - 0.5f) * shake * 2;
         float sy = (RANDOM.nextFloat() - 0.5f) * shake * 2;
 
@@ -346,6 +398,11 @@ public final class PopupRenderer {
         int right = boxW / 2;
         int border = color(t, 0);
 
+        // ---------- tier 5 ring blast around the box ----------
+        if (tier == 5 && sinceLand >= 0 && sinceLand < 40) {
+            shockRings(g, 0, boxH / 2f, sinceLand, alpha, new int[]{border, th[1], 0xFFFFFF});
+        }
+
         // ---------- landing pulse ring ----------
         if (sinceLand >= 0 && sinceLand < 12) {
             int grow = (int) (sinceLand * (2.5f + tier * 0.4f));
@@ -353,15 +410,41 @@ public final class PopupRenderer {
             outline(g, left - 3 - grow, -3 - grow, right + 3 + grow, boxH + 3 + grow, argb(pa, border));
         }
 
-        // ---------- box ----------
+        // ---------- box (4 random styles) ----------
         int thick = 2 + Math.min(tier, 8) / 2;
-        g.fill(left - thick, -thick, right + thick, boxH + thick, argb(a, border));
-        g.fill(left, 0, right, boxH, argb(Math.min(a, 235), 0x14141F));
+        if (boxStyle == 1) {
+            // NEON: thin bright border with a soft glow around it
+            for (int i = 4; i >= 1; i--) {
+                g.fill(left - thick - i * 2, -thick - i * 2, right + thick + i * 2, boxH + thick + i * 2,
+                        argb((int) (a * 0.08f * (5 - i)), border));
+            }
+            g.fill(left - 1, -1, right + 1, boxH + 1, argb(a, border));
+            g.fill(left, 0, right, boxH, argb(Math.min(a, 240), 0x07070D));
+        } else if (boxStyle == 2) {
+            // ROYAL: thick dark frame with a gold inner line and studs
+            g.fill(left - thick - 2, -thick - 2, right + thick + 2, boxH + thick + 2, argb(a, darker(border)));
+            g.fill(left - thick, -thick, right + thick, boxH + thick, argb(a, border));
+            g.fill(left, 0, right, boxH, argb(Math.min(a, 235), 0x1A1208));
+            for (int sx2 = left + 8; sx2 < right - 4; sx2 += 16) {
+                g.fill(sx2, -thick - 1, sx2 + 3, -thick + 2, argb(a, th[1]));
+                g.fill(sx2, boxH + thick - 2, sx2 + 3, boxH + thick + 1, argb(a, th[1]));
+            }
+        } else {
+            // CLASSIC and GLITCH
+            g.fill(left - thick, -thick, right + thick, boxH + thick, argb(a, border));
+            g.fill(left, 0, right, boxH, argb(Math.min(a, 235), 0x14141F));
+        }
         g.fill(left, 0, right, 3, argb(a, border));
         g.fill(left, boxH - 3, right, boxH, argb(a, border));
         // corner gems
         g.fill(left - thick - 2, -thick - 2, left - thick + 3, -thick + 3, argb(a, th[1]));
         g.fill(right + thick - 3, -thick - 2, right + thick + 2, -thick + 3, argb(a, th[1]));
+        if (boxStyle == 3 && RANDOM.nextInt(6) == 0) {
+            // GLITCH: random slices jump sideways
+            int gy = RANDOM.nextInt(Math.max(1, boxH));
+            int off = RANDOM.nextInt(9) - 4;
+            g.fill(left + off, gy, right + off, gy + 2 + RANDOM.nextInt(4), argb(a / 2, RANDOM.nextBoolean() ? 0xFF2A6D : 0x2AF6FF));
+        }
 
         // shine sweep
         float shine = ((t * (6 + tier * 2)) % (boxW + 60)) - 30;
@@ -374,7 +457,15 @@ public final class PopupRenderer {
         g.pose().pushMatrix();
         g.pose().translate(0, 10);
         g.pose().scale(titleScale, titleScale);
-        g.centeredText(font, title, 0, -4, argb(a, tier >= 7 ? color(t, 40) : th[1]));
+        int titleColor = tier >= 7 ? color(t, 40) : th[1];
+        if (boxStyle == 3) {
+            int jx = RANDOM.nextInt(10) == 0 ? RANDOM.nextInt(5) - 2 : 0;
+            g.centeredText(font, title, -1 + jx, -4, argb(a / 2, 0xFF2A6D));
+            g.centeredText(font, title, 1 - jx, -4, argb(a / 2, 0x2AF6FF));
+        } else if (boxStyle == 1) {
+            g.centeredText(font, title, 0, -3, argb(a / 3, border));
+        }
+        g.centeredText(font, title, 0, -4, argb(a, titleColor));
         g.pose().popMatrix();
 
         // ---------- amount: counts up, then pops ----------
@@ -405,12 +496,14 @@ public final class PopupRenderer {
     // =====================================================================
     private static void burst(float x, float y, int count) {
         int[] th = THEMES[theme];
-        int kind = variant == 0 ? COIN : variant == 1 ? GEM : STAR;
+        int[] kinds = {COIN, GEM, STAR, HEART, ORB};
+        int kind = kinds[variant];
         for (int i = 0; i < count; i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2;
             float speed = 1.5f + RANDOM.nextFloat() * (3f + Math.min(tier, 8));
+            int c = kind == HEART ? 0xFF6FA8 : kind == ORB ? 0x9CFF3F : th[0];
             Particle p = new Particle(kind, x, y, (float) Math.cos(angle) * speed,
-                    (float) Math.sin(angle) * speed - 2.5f, 25 + RANDOM.nextInt(20), th[0],
+                    (float) Math.sin(angle) * speed - 2.5f, 25 + RANDOM.nextInt(20), c,
                     2 + (tier >= 5 ? 1 : 0));
             p.gravity = 0.3f;
             add(p);
@@ -488,8 +581,10 @@ public final class PopupRenderer {
         float ramp = Mth.clamp(sinceLand / 20f, 0.3f, 1f);
         int n = Math.max(1, (int) (density * ramp));
         for (int i = 0; i < n; i++) {
-            int kind = variant == 0 ? BILL : variant == 1 ? COIN : GEM;
-            int c = variant == 0 ? 0x2E9E48 : variant == 1 ? 0xFFD700 : 0x5FF3FF;
+            int[] kinds = {BILL, COIN, GEM, HEART, ORB};
+            int[] colors = {0x2E9E48, 0xFFD700, 0x5FF3FF, 0xFF6FA8, 0x9CFF3F};
+            int kind = kinds[variant];
+            int c = colors[variant];
             Particle p = new Particle(kind, RANDOM.nextFloat() * sw, -6, (RANDOM.nextFloat() - 0.5f),
                     1.5f + RANDOM.nextFloat() * 2f, 400, c, 2);
             p.gravity = 0.02f;
@@ -505,7 +600,7 @@ public final class PopupRenderer {
             add(p);
         }
         if (sinceLand % 6 == 0) {
-            playSound(variant == 2 ? SoundEvents.AMETHYST_BLOCK_CHIME : SoundEvents.EXPERIENCE_ORB_PICKUP,
+            playSound(variant == 2 || variant == 3 ? SoundEvents.AMETHYST_BLOCK_CHIME : SoundEvents.EXPERIENCE_ORB_PICKUP,
                     1.1f + RANDOM.nextFloat() * 0.8f);
         }
     }
@@ -542,6 +637,12 @@ public final class PopupRenderer {
             } else if (variant == 2) {
                 kind = RANDOM.nextBoolean() ? BILL : COIN;
                 c = kind == BILL ? 0x2E9E48 : 0xFFD700;
+            } else if (variant == 3) {
+                kind = RANDOM.nextBoolean() ? GEM : SPARK;
+                c = kind == GEM ? 0xBFEFFF : 0xFFFFFF;
+            } else if (variant == 4) {
+                kind = STAR;
+                c = hsv(RANDOM.nextFloat(), 0.8f, 1f);
             } else {
                 kind = RANDOM.nextInt(4) == 0 ? COIN : SPARK;
                 c = kind == COIN ? THEMES[theme][0] : 0xA8ADB5;
@@ -565,6 +666,12 @@ public final class PopupRenderer {
         if (variant == 2 && sinceLand % 6 == 0) {
             playSound(SoundEvents.EXPERIENCE_ORB_PICKUP, 1f + RANDOM.nextFloat());
         }
+        if (variant == 3 && sinceLand % 10 == 0) {
+            playSound(SoundEvents.AMETHYST_BLOCK_CHIME, 1.4f + RANDOM.nextFloat() * 0.5f);
+        }
+        if (variant == 4 && sinceLand % 12 == 0) {
+            playSound(SoundEvents.FIREWORK_ROCKET_TWINKLE, 1f + RANDOM.nextFloat() * 0.5f);
+        }
     }
 
     private static void renderTornado(GuiGraphicsExtractor g, float t, float sinceLand, float alpha, int sw, int sh) {
@@ -572,7 +679,7 @@ public final class PopupRenderer {
         float strength = Mth.clamp(sinceLand / 25f, 0, 1) * alpha;
         if (strength < 0.02f) return;
 
-        int sky = variant == 0 ? 0x1A1D24 : variant == 1 ? 0x3A0A00 : 0x0A2A12;
+        int sky = new int[]{0x1A1D24, 0x3A0A00, 0x0A2A12, 0x0A1A2A, 0x140A24}[variant];
         g.fill(0, 0, sw, sh, argb((int) ((variant == 0 ? 120 : 60) * strength), sky));
 
         float ground = sh - 6;
@@ -580,7 +687,7 @@ public final class PopupRenderer {
         float base = Math.min(sw, sh);
 
         // dust cloud at the bottom
-        int dust = variant == 1 ? 0xFF6A00 : variant == 2 ? 0x3FBF5A : 0x9A8F80;
+        int dust = variant == 4 ? hsv(t * 0.01f, 0.6f, 1f) : new int[]{0x9A8F80, 0xFF6A00, 0x3FBF5A, 0xDDF4FF, 0}[variant];
         float bx = tornadoAxisX(t, 0, sw);
         fillCircle(g, bx, ground, base * 0.24f * strength, 0.25f, argb((int) (45 * strength), dust));
         fillCircle(g, bx, ground, base * 0.14f * strength, 0.3f, argb((int) (70 * strength), dust));
@@ -603,6 +710,11 @@ public final class PopupRenderer {
                     int c = h < 0.25f ? 0xFFF2A0 : h < 0.55f ? 0xFFA22A : h < 0.8f ? 0xFF5A14 : 0xC0200A;
                     int s = p[3] > 0.7f ? 2 : 1;
                     g.fill(px, py, px + s, py + s, argb(a, c));
+                } else if (variant == 3) {
+                    int c = p[3] > 0.66f ? 0xFFFFFF : p[3] > 0.33f ? 0xBFEFFF : 0x7FC8F0;
+                    g.fill(px, py, px + 2, py + 2, argb(a, c));
+                } else if (variant == 4) {
+                    g.fill(px, py, px + 2, py + 2, argb(a, hsv(h * 0.8f + t * 0.01f + p[3] * 0.1f, 0.75f, 1f)));
                 } else if (variant == 2) {
                     if (i % 3 == 0) {
                         g.fill(px - 2, py - 1, px + 2, py + 1, argb(a, 0x2E9E48));
@@ -644,6 +756,28 @@ public final class PopupRenderer {
                 add(p);
                 if (RANDOM.nextInt(4) == 0) playSound(SoundEvents.FIRECHARGE_USE, 0.6f + RANDOM.nextFloat() * 0.3f);
             }
+        } else if (mode == 3) {                            // aurora: sparkles drifting down from the lights
+            for (int i = 0; i < 2; i++) {
+                Particle p = new Particle(STAR, RANDOM.nextFloat() * sw, 20 + RANDOM.nextFloat() * 60, 0,
+                        0.3f + RANDOM.nextFloat() * 0.5f, 60, hsv(0.3f + RANDOM.nextFloat() * 0.45f, 0.6f, 1f), 2);
+                p.gravity = 0;
+                p.drag = 1;
+                add(p);
+            }
+            if (sinceLand % 30 == 0) playSound(SoundEvents.AMETHYST_BLOCK_CHIME, 0.7f + RANDOM.nextFloat() * 0.5f);
+        } else if (mode == 4) {                            // supernova
+            int nova = 40;
+            if (sinceLand == 0) playSound(SoundEvents.BEACON_ACTIVATE, 1.0f);
+            if (sinceLand > 0 && sinceLand < nova && sinceLand % 10 == 0) {
+                playSound(SoundEvents.BEACON_AMBIENT, 0.8f + sinceLand / (float) nova);
+            }
+            if (sinceLand == nova) {
+                starBurst(sw / 2f, sh * 0.62f, 320, new int[]{0xFFFFFF, 0x9FC3FF, 0xFF8AD8, 0xFFE08A});
+                playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.8f);
+                playSound(SoundEvents.FIREWORK_ROCKET_LARGE_BLAST, 0.6f);
+                playSound(SoundEvents.TOTEM_USE, 1.0f);
+            }
+            if (sinceLand > nova && sinceLand % 25 == 0) playSound(SoundEvents.FIREWORK_ROCKET_TWINKLE, 1.5f);
         } else {                                           // lightning storm
             if (sinceLand % (god ? 12 : 7) == 0) {
                 float x = 20 + RANDOM.nextFloat() * (sw - 40);
@@ -657,6 +791,137 @@ public final class PopupRenderer {
                 }
                 playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.7f + RANDOM.nextFloat() * 0.5f);
                 if (RANDOM.nextBoolean()) playSound(SoundEvents.LIGHTNING_BOLT_IMPACT, 1f);
+            }
+        }
+    }
+
+
+    // =====================================================================
+    //  Party effects, spotlights, aurora, supernova, god rays, nebula
+    // =====================================================================
+    private static void popper(float x, float y, float dir, int count) {
+        for (int i = 0; i < count; i++) {
+            Particle p = new Particle(CONFETTI, x, y, dir * (1.5f + RANDOM.nextFloat() * 4), -2 - RANDOM.nextFloat() * 4,
+                    50 + RANDOM.nextInt(30), hsv(RANDOM.nextFloat(), 0.8f, 1f), 2);
+            p.gravity = 0.12f;
+            p.drag = 0.97f;
+            p.spin = RANDOM.nextFloat() * 6;
+            add(p);
+        }
+        playSound(SoundEvents.FIREWORK_ROCKET_BLAST, 1.7f);
+    }
+
+    private static void cannon(float x, float y, float dir, int count) {
+        for (int i = 0; i < count; i++) {
+            Particle p = new Particle(CONFETTI, x, y, dir * (2 + RANDOM.nextFloat() * 4), -6 - RANDOM.nextFloat() * 5,
+                    90 + RANDOM.nextInt(40), hsv(RANDOM.nextFloat(), 0.8f, 1f), 2);
+            p.gravity = 0.12f;
+            p.drag = 0.985f;
+            p.spin = RANDOM.nextFloat() * 6;
+            add(p);
+        }
+    }
+
+    private static void spotlight(GuiGraphicsExtractor g, float x, float y, float angle, float len, int color, float alpha) {
+        if (alpha < 0.02f) return;
+        g.pose().pushMatrix();
+        g.pose().translate(x, y);
+        g.pose().rotate(angle);
+        for (int i = 0; i < len; i += 4) {
+            float f = i / len;
+            int w = (int) (2 + i * 0.12f);
+            g.fill(i, -w, i + 4, w, argb((int) (55 * alpha * (1 - f)), color));
+        }
+        g.pose().popMatrix();
+    }
+
+    private static void renderAurora(GuiGraphicsExtractor g, float t, float sinceLand, float alpha, int sw) {
+        if (sinceLand < 0) return;
+        float fa = Mth.clamp(sinceLand / 20f, 0, 1) * alpha;
+        if (fa < 0.02f) return;
+        for (int x = 0; x < sw; x += 3) {
+            float top = 10 + Mth.sin(x * 0.02f + t * 0.05f) * 14 + Mth.sin(x * 0.051f - t * 0.03f) * 7;
+            float height = 55 + Mth.sin(x * 0.03f + t * 0.04f) * 25;
+            float hue = 0.38f + 0.22f * Mth.sin(x * 0.006f + t * 0.01f);
+            int c = hsv(hue, 0.7f, 1f);
+            float shimmer = 0.6f + 0.4f * Mth.sin(t * 0.1f + x * 0.05f);
+            for (int k = 0; k < height; k += 5) {
+                float f = k / height;
+                int ca = (int) (fa * 110 * (1 - f) * shimmer);
+                g.fill(x, (int) (top + k), x + 3, (int) (top + k + 5), argb(ca, c));
+            }
+        }
+    }
+
+    private static void renderSupernova(GuiGraphicsExtractor g, float t, float sinceLand, float alpha, int sw, int sh) {
+        if (sinceLand < 0) return;
+        float cx = sw / 2f, cy = sh * 0.62f;
+        if (sinceLand < 40) {
+            float grow = sinceLand / 40f;
+            float r = 3 + grow * 10 + Mth.sin(t * (0.5f + grow)) * (1 + grow * 3);
+            fillCircle(g, cx, cy, r * 3, 1f, argb((int) (40 * alpha), 0xFFB070));
+            fillCircle(g, cx, cy, r * 1.8f, 1f, argb((int) (90 * alpha), 0xFFE0A0));
+            fillCircle(g, cx, cy, r, 1f, argb((int) (255 * alpha), 0xFFFFFF));
+        } else {
+            float since = sinceLand - 40;
+            float neb = Math.min(since * 2.2f, Math.min(sw, sh) * 0.35f);
+            fillCircle(g, cx, cy, neb, 0.8f, argb((int) (35 * alpha), 0xFF6FB5));
+            fillCircle(g, cx, cy, neb * 0.7f, 0.8f, argb((int) (40 * alpha), 0x6FA8FF));
+            fillCircle(g, cx, cy, neb * 0.4f, 0.8f, argb((int) (45 * alpha), 0xFFE08A));
+            shockRings(g, cx, cy, since, alpha, new int[]{0xFFFFFF, 0x9FC3FF, 0xFF8AD8});
+            // pulsar left behind, spinning its beams
+            float ang = t * 0.35f;
+            float bl = 55;
+            line(g, cx, cy, cx + Mth.cos(ang) * bl, cy + Mth.sin(ang) * bl, 2, argb((int) (200 * alpha), 0xCFE3FF));
+            line(g, cx, cy, cx - Mth.cos(ang) * bl, cy - Mth.sin(ang) * bl, 2, argb((int) (200 * alpha), 0xCFE3FF));
+            fillCircle(g, cx, cy, 3, 1f, argb((int) (255 * alpha), 0xFFFFFF));
+            if (since < 10) g.fill(0, 0, sw, sh, argb((int) ((1 - since / 10f) * 230), 0xFFFFFF));
+        }
+    }
+
+    private static void godRays(GuiGraphicsExtractor g, float t, float sinceLand, float alpha, int sw, int sh) {
+        if (sinceLand < 0) return;
+        float fa = Mth.clamp(sinceLand / 15f, 0, 1) * alpha * 0.8f;
+        for (int i = 0; i < 7; i++) {
+            float ang = (float) (Math.PI / 2) + (i - 3) * 0.24f + Mth.sin(t * 0.02f + i) * 0.08f;
+            spotlight(g, sw / 2f, -10, ang, sh * 1.3f, 0xFFE9A8, fa);
+        }
+    }
+
+    private static void drawNebula(GuiGraphicsExtractor g, float t, float alpha, int sw, int sh, int[] colors) {
+        float[][] spots = {{0.2f, 0.3f, 0.35f}, {0.78f, 0.25f, 0.3f}, {0.62f, 0.78f, 0.4f}, {0.15f, 0.82f, 0.28f}};
+        float base = Math.min(sw, sh);
+        for (int i = 0; i < spots.length; i++) {
+            float x = spots[i][0] * sw + Mth.sin(t * 0.004f + i) * 20;
+            float y = spots[i][1] * sh + Mth.cos(t * 0.005f + i * 2) * 12;
+            float r = spots[i][2] * base;
+            int c = colors[i % colors.length];
+            fillCircle(g, x, y, r, 0.7f, argb((int) (14 * alpha), c));
+            fillCircle(g, x, y, r * 0.65f, 0.7f, argb((int) (16 * alpha), c));
+            fillCircle(g, x, y, r * 0.35f, 0.7f, argb((int) (18 * alpha), c));
+        }
+    }
+
+    /** Background stars, bent into arcs around the black hole (gravitational lensing). */
+    private static void drawLensedStars(GuiGraphicsExtractor g, float t, float alpha, int sw, int sh) {
+        float r = Math.max(1, bhRadius);
+        for (float[] s : BG_STARS) {
+            float sx = (s[0] * 0.5f + 0.5f) * sw, sy = (s[1] * 0.5f + 0.5f) * sh;
+            float dx = sx - bhX, dy = sy - bhY;
+            float d = (float) Math.sqrt(dx * dx + dy * dy) + 0.01f;
+            float tw = 0.5f + 0.5f * Mth.sin(t * 0.15f + s[2] * 20);
+            int a = (int) (alpha * 255 * tw);
+            if (d < r * 7) {
+                float nd = d + r * r * 2.2f / d;
+                float nx = bhX + dx / d * nd, ny = bhY + dy / d * nd;
+                float tx = -dy / d, ty = dx / d;
+                int len = (int) (2 + (r * 7 - d) / (r * 7) * 8);
+                for (int k = -len; k <= len; k++) {
+                    int px = (int) (nx + tx * k), py = (int) (ny + ty * k);
+                    g.fill(px, py, px + 1, py + 1, argb(a, 0xFFFFFF));
+                }
+            } else {
+                g.fill((int) sx, (int) sy, (int) sx + 1, (int) sy + 1, argb(a, 0xFFFFFF));
             }
         }
     }
@@ -680,8 +945,14 @@ public final class PopupRenderer {
         if (sinceLand > 0 && sinceLand < merge && sinceLand % 25 == 0) {
             playSound(SoundEvents.BEACON_AMBIENT, 0.6f + sinceLand / (float) merge);
         }
+        if (sinceLand == 30 || sinceLand == 90) {
+            Particle comet = new Particle(METEOR, -10, sh * 0.1f, 5.5f, 2.2f, 200, 0x9FC3FF, 3);
+            comet.gravity = 0;
+            comet.drag = 1;
+            add(comet);
+        }
         if (sinceLand == merge) {
-            starBurst(sw / 2f, sh * 0.58f, 260, new int[]{OTHER_COLORS[variant][1], 0xCFE3FF, 0xFFFFFF});
+            starBurst(sw / 2f, sh * 0.58f, 260, new int[]{OTHER_COLORS[variant % 3][1], 0xCFE3FF, 0xFFFFFF});
             playSound(SoundEvents.END_PORTAL_SPAWN, 0.8f);
             playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.6f);
             playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.8f);
@@ -695,8 +966,9 @@ public final class PopupRenderer {
 
         g.fill(0, 0, sw, sh, argb((int) (225 * fadeIn), 0x05030F));
         drawBackgroundStars(g, t, fadeIn, sw, sh);
+        drawNebula(g, t, fadeIn, sw, sh, new int[]{0xFF5FA2, 0x5F8BFF, 0xA05FFF, 0x5FFFD0});
 
-        int[] oc = OTHER_COLORS[variant];
+        int[] oc = OTHER_COLORS[variant % 3];
         float merge = galaxyMergeTick();
         float p = Mth.clamp(sinceLand / merge, 0, 1);
         float fall = p * p;
@@ -778,7 +1050,7 @@ public final class PopupRenderer {
     private static void tickBlackHole(int sinceLand, boolean holding, int sw, int sh) {
         float target = Math.min(sw, sh) * 0.11f;
         bhTarget = target;
-        bhPalette = variant;
+        bhPalette = variant % 3;
         bhJets = variant == 1;
         bhX = sw / 2f;
         bhY = sh * 0.6f;
@@ -831,7 +1103,7 @@ public final class PopupRenderer {
 
         if (tier == 10) {
             g.fill(0, 0, sw, sh, argb((int) (190 * strength), 0x000000));
-            drawBackgroundStars(g, t, strength * 0.8f, sw, sh);
+            drawLensedStars(g, t, strength * 0.9f, sw, sh);
         }
 
         fillCircle(g, bhX, bhY, r * 3.2f, 0.45f, argb((int) (18 * strength), pal[2]));
@@ -928,7 +1200,7 @@ public final class PopupRenderer {
 
         // ---- THE COLLISION ----
         if (sinceLand == collide) {
-            int[][] uc = UNIVERSE_COLORS[variant];
+            int[][] uc = UNIVERSE_COLORS[variant % 3];
             starBurst(meetX, meetY, 420, new int[]{uc[0][0], uc[0][1], uc[1][0], uc[1][1], 0xFFFFFF});
             for (int i = 0; i < 12; i++) {
                 double ang = RANDOM.nextDouble() * Math.PI * 2;
@@ -950,7 +1222,7 @@ public final class PopupRenderer {
         // ---- a black hole forms from the wreckage ----
         float target = Math.min(sw, sh) * 0.13f;
         bhTarget = target;
-        bhPalette = variant;
+        bhPalette = variant % 3;
         bhJets = false;
         bhX = meetX;
         bhY = meetY;
@@ -1031,8 +1303,9 @@ public final class PopupRenderer {
 
         g.fill(0, 0, sw, sh, argb((int) (235 * fadeIn), 0x03020A));
         drawBackgroundStars(g, t, fadeIn, sw, sh);
+        drawNebula(g, t, fadeIn, sw, sh, new int[]{0x5F8BFF, 0xFF8A5F, 0xA05FFF, 0x5FFFD0});
 
-        int[][] uc = UNIVERSE_COLORS[variant];
+        int[][] uc = UNIVERSE_COLORS[variant % 3];
         float collide = mvCollide();
         float base = Math.min(sw, sh);
         float uniR = base * 0.30f;
@@ -1161,6 +1434,538 @@ public final class PopupRenderer {
         }
     }
 
+
+    // =====================================================================
+    //  DARK MATTER EVENT (tier 12)
+    // =====================================================================
+    private static final float[][] DM_NODES = makeDiskPoints(30, 77, false);
+    private static final int[][] DM_EDGES = makeEdges(DM_NODES, 3);
+    private static final int[][] DM_COLORS = {{0xB04BFF, 0x2AF6FF}, {0xFF2A4A, 0x8A0FFF}, {0x3FFF8A, 0x6A2AFF}};
+
+    private static int dmCollide() { return (int) (holdTicks * 0.28f); }
+    private static int dmImplode() { return (int) (holdTicks * 0.80f); }
+    private static int dmRelease() { return (int) (holdTicks * 0.93f); }
+
+    private static void tickDarkMatter(int sinceLand, boolean holding, int sw, int sh) {
+        int collide = dmCollide(), implode = dmImplode(), release = dmRelease();
+        int[] dc = DM_COLORS[variant % 3];
+        float cx = sw / 2f, cy = sh * 0.58f;
+
+        if (sinceLand == 0) {
+            playSound(SoundEvents.WARDEN_EMERGE, 0.6f);
+            playSound(SoundEvents.BEACON_ACTIVATE, 0.4f);
+        }
+        if (sinceLand > 0 && sinceLand < collide && sinceLand % 18 == 0) {
+            playSound(SoundEvents.BEACON_AMBIENT, 0.4f + sinceLand / (float) collide);
+        }
+        if (sinceLand == collide) {
+            starBurst(cx, cy, 380, new int[]{dc[0], dc[1], 0x2A0040, 0xFFFFFF});
+            playSound(SoundEvents.WARDEN_SONIC_BOOM, 0.4f);
+            playSound(SoundEvents.ENDER_DRAGON_DEATH, 0.7f);
+            playSound(SoundEvents.WITHER_DEATH, 0.6f);
+            playSound(SoundEvents.END_PORTAL_SPAWN, 0.4f);
+        }
+        if (sinceLand == collide + 40) playSound(SoundEvents.WARDEN_ROAR, 0.6f);
+
+        // the dark core (uses the black hole pull so everything drifts into it)
+        float target = Math.min(sw, sh) * 0.09f;
+        bhX = cx;
+        bhY = cy;
+        bhTarget = target;
+        if (sinceLand > collide && sinceLand < release) {
+            bhActive = true;
+            int f = sinceLand - collide;
+            if (sinceLand < implode) {
+                bhRadius = target * Math.min(1f, f / 60f) * (1 + 0.12f * Mth.sin(f * 0.3f));
+            } else {
+                float p = Mth.clamp((sinceLand - implode) / (float) (release - implode), 0, 1);
+                bhRadius = target * (1 - easeInCubic(p) * 0.85f);
+            }
+            if (f % 25 == 0) playSound(SoundEvents.WARDEN_HEARTBEAT, 0.4f);
+            if (holding) {
+                for (int i = 0; i < 4; i++) {
+                    Particle p = new Particle(SPARK, RANDOM.nextFloat() * sw, RANDOM.nextFloat() * sh,
+                            RANDOM.nextFloat() - 0.5f, RANDOM.nextFloat() - 0.5f, 200,
+                            RANDOM.nextBoolean() ? dc[0] : dc[1], 2);
+                    p.gravity = 0;
+                    add(p);
+                }
+            }
+        } else {
+            bhActive = false;
+        }
+        if (sinceLand == implode) {
+            playSound(SoundEvents.END_PORTAL_SPAWN, 0.5f);
+            playSound(SoundEvents.WARDEN_SONIC_BOOM, 0.8f);
+        }
+        if (sinceLand == release) {
+            bhActive = false;
+            starBurst(cx, cy, 480, new int[]{dc[0], dc[1], 0xFFFFFF, 0x1A0030});
+            playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.5f);
+            playSound(SoundEvents.WITHER_SPAWN, 1.2f);
+            playSound(SoundEvents.TOTEM_USE, 0.7f);
+        }
+    }
+
+    private static void renderDarkMatter(GuiGraphicsExtractor g, float t, float sinceLand, float alpha, int sw, int sh) {
+        if (sinceLand < 0) return;
+        float fadeIn = Mth.clamp(sinceLand / 15f, 0, 1) * alpha;
+        if (fadeIn <= 0.01f) return;
+        int[] dc = DM_COLORS[variant % 3];
+        int collide = dmCollide(), implode = dmImplode(), release = dmRelease();
+        float cx = sw / 2f, cy = sh * 0.58f;
+        float base = Math.min(sw, sh);
+
+        g.fill(0, 0, sw, sh, argb((int) (240 * fadeIn), 0x05000B));
+        drawBackgroundStars(g, t, fadeIn * 0.6f, sw, sh);
+        drawNebula(g, t, fadeIn * 0.8f, sw, sh, new int[]{dc[0], 0x30004A, dc[1], 0x15002A});
+
+        // ---- two multiverses (3 universes each) on a collision course ----
+        if (sinceLand < collide) {
+            float p = sinceLand / collide;
+            float fall = p * p;
+            float bigR = base * 0.33f;
+            float ax = Mth.lerp(fall, -bigR * 1.3f, cx - bigR * 0.5f);
+            float bx = Mth.lerp(fall, sw + bigR * 1.3f, cx + bigR * 0.5f);
+            drawMultiverseCluster(g, ax, cy, bigR, UNIVERSE_COLORS[0][0], UNIVERSE_COLORS[0][1], t, fadeIn, 1);
+            drawMultiverseCluster(g, bx, cy, bigR, UNIVERSE_COLORS[1][0], UNIVERSE_COLORS[2][1], t, fadeIn, -1);
+            if (p > 0.5f) {
+                int arcs = 1 + (int) ((p - 0.5f) * 10);
+                for (int i = 0; i < arcs; i++) {
+                    float y0 = cy + (RANDOM.nextFloat() - 0.5f) * bigR;
+                    jagged(g, ax + bigR * 0.6f, y0, bx - bigR * 0.6f, y0 + (RANDOM.nextFloat() - 0.5f) * 30,
+                            argb((int) (230 * fadeIn), RANDOM.nextBoolean() ? dc[0] : dc[1]));
+                }
+            }
+            return;
+        }
+
+        float since = sinceLand - collide;
+        float consume = Mth.clamp(since / (implode - collide), 0, 1);
+        float implodeP = Mth.clamp((sinceLand - implode) / (release - implode), 0, 1);
+
+        if (sinceLand < release) {
+            // what's left of the multiverses, corrupted and dragged in
+            float remR = base * 0.33f * (1 - consume * 0.8f) * (1 - implodeP);
+            if (remR > 6) {
+                drawMultiverseCluster(g, cx, cy, remR, new int[]{0x2A0040, dc[0]}, new int[]{0x10001A, dc[1]},
+                        t * 2.2f, fadeIn * (1 - consume * 0.6f), 1);
+            }
+
+            // ---- the dark matter web ----
+            float web = Mth.clamp(since / 50f, 0, 1) * (1 - implodeP);
+            float pullIn = consume * 0.35f + implodeP * 0.65f;
+            if (web > 0.01f) {
+                float[][] pos = new float[DM_NODES.length][2];
+                for (int i = 0; i < DM_NODES.length; i++) {
+                    float[] n = DM_NODES[i];
+                    float nx = cx + n[0] * sw * 0.55f + Mth.sin(t * 0.05f + n[2] * 10) * 8;
+                    float ny = cy + n[1] * sh * 0.55f + Mth.cos(t * 0.04f + n[2] * 12) * 8;
+                    pos[i][0] = Mth.lerp(pullIn, nx, cx);
+                    pos[i][1] = Mth.lerp(pullIn, ny, cy);
+                }
+                for (int e = 0; e < DM_EDGES.length; e++) {
+                    float[] a0 = pos[DM_EDGES[e][0]], a1 = pos[DM_EDGES[e][1]];
+                    float mx = (a0[0] + a1[0]) / 2 + Mth.sin(t * 0.08f + e) * 10;
+                    float my = (a0[1] + a1[1]) / 2 + Mth.cos(t * 0.07f + e * 1.3f) * 10;
+                    float pulse = 0.5f + 0.5f * Mth.sin(t * 0.15f - e * 0.4f);
+                    int c = argb((int) (200 * web * fadeIn * (0.35f + 0.65f * pulse)), e % 2 == 0 ? dc[0] : dc[1]);
+                    line(g, a0[0], a0[1], mx, my, 1, c);
+                    line(g, mx, my, a1[0], a1[1], 1, c);
+                }
+                for (int i = 0; i < pos.length; i++) {
+                    float pulse = 0.5f + 0.5f * Mth.sin(t * 0.2f + i);
+                    fillCircle(g, pos[i][0], pos[i][1], 4 + pulse * 2, 1f, argb((int) (60 * web * fadeIn), dc[i % 2]));
+                    fillCircle(g, pos[i][0], pos[i][1], 1.5f, 1f, argb((int) (255 * web * fadeIn), 0xFFFFFF));
+                }
+            }
+
+            // ---- the dark core and its tendrils ----
+            float r = bhRadius;
+            if (bhActive && r > 1) {
+                fillCircle(g, cx, cy, r * 2.4f, 1f, argb((int) (40 * fadeIn), dc[0]));
+                fillCircle(g, cx, cy, r * 1.6f, 1f, argb((int) (70 * fadeIn), dc[1]));
+                for (int k = 0; k < 10; k++) {
+                    float baseAng = k * (float) (Math.PI * 2 / 10) + t * 0.02f;
+                    for (int j = 0; j < 24; j++) {
+                        float rr = r + j * 4;
+                        float ang = baseAng + Mth.sin(t * 0.1f + j * 0.35f + k) * 0.45f;
+                        int px = (int) (cx + Mth.cos(ang) * rr), py = (int) (cy + Mth.sin(ang) * rr);
+                        g.fill(px, py, px + 2, py + 2, argb((int) (220 * fadeIn * (1 - j / 24f)), j % 3 == 0 ? dc[1] : dc[0]));
+                    }
+                }
+                fillCircle(g, cx, cy, r, 1f, 0xFF000000);
+                int dots = 160;
+                for (int i = 0; i < dots; i++) {
+                    double ang = i * Math.PI * 2 / dots;
+                    float wob = 1.05f + 0.06f * Mth.sin((float) ang * 7 + t * 0.4f);
+                    int px = (int) (cx + Math.cos(ang) * r * wob), py = (int) (cy + Math.sin(ang) * r * wob);
+                    g.fill(px, py, px + 2, py + 2, argb((int) (255 * fadeIn), i % 2 == 0 ? dc[0] : dc[1]));
+                }
+            }
+
+            // ---- implosion: rings rushing INWARD ----
+            if (implodeP > 0) {
+                for (int ring = 0; ring < 3; ring++) {
+                    float rp = Mth.clamp(implodeP * 1.3f - ring * 0.15f, 0, 1);
+                    float radius = (1 - rp) * base * 0.7f;
+                    if (radius < 2) continue;
+                    int dots = 140;
+                    for (int i = 0; i < dots; i++) {
+                        double ang = i * Math.PI * 2 / dots;
+                        int px = (int) (cx + Math.cos(ang) * radius), py = (int) (cy + Math.sin(ang) * radius * 0.7f);
+                        g.fill(px, py, px + 2, py + 2, argb((int) (220 * fadeIn * rp), dc[ring % 2]));
+                    }
+                }
+            }
+
+            // ---- glitch slices across the screen ----
+            if (RANDOM.nextInt(3) == 0) {
+                int n = 1 + RANDOM.nextInt(3);
+                for (int i = 0; i < n; i++) {
+                    int gy = RANDOM.nextInt(Math.max(1, sh));
+                    int off = RANDOM.nextInt(30) - 15;
+                    g.fill(off, gy, sw + off, gy + 1 + RANDOM.nextInt(6), argb(70, RANDOM.nextBoolean() ? 0xFF2A6D : 0x2AF6FF));
+                }
+            }
+        }
+
+        // collision: white blink, then the screen goes BLACK
+        if (since < 4) {
+            g.fill(0, 0, sw, sh, argb(255, 0xFFFFFF));
+        } else if (since < 26) {
+            g.fill(0, 0, sw, sh, argb((int) ((1 - (since - 4) / 22f) * 255), 0x000000));
+        }
+
+        // release burst
+        float sinceRel = sinceLand - release;
+        if (sinceRel >= 0) {
+            shockRings(g, cx, cy, sinceRel, fadeIn, new int[]{dc[0], 0xFFFFFF, dc[1]});
+            if (sinceRel < 20) g.fill(0, 0, sw, sh, argb((int) ((1 - sinceRel / 20f) * 220), dc[0]));
+        }
+    }
+
+    /** A multiverse: three universes orbiting each other inside a shimmering bubble. */
+    private static void drawMultiverseCluster(GuiGraphicsExtractor g, float cx, float cy, float r, int[] colsA, int[] colsB,
+                                              float t, float alpha, int dir) {
+        fillCircle(g, cx, cy, r * 1.05f, 1f, argb((int) (18 * alpha), colsA[1]));
+        for (int i = 0; i < 3; i++) {
+            float ang = t * 0.03f * dir + i * (float) (Math.PI * 2 / 3);
+            drawUniverseLite(g, cx + Mth.cos(ang) * r * 0.5f, cy + Mth.sin(ang) * r * 0.5f, r * 0.42f,
+                    i % 2 == 0 ? colsA : colsB, t, alpha, i);
+        }
+        int dots = 200;
+        for (int i = 0; i < dots; i++) {
+            double ang = i * Math.PI * 2 / dots;
+            float shimmer = 0.5f + 0.5f * (float) Math.sin(ang * 6 - t * 0.15f);
+            int px = (int) (cx + Math.cos(ang) * r), py = (int) (cy + Math.sin(ang) * r);
+            g.fill(px, py, px + 2, py + 2, argb((int) (200 * alpha * (0.3f + 0.7f * shimmer)), shimmer > 0.5f ? colsA[1] : colsB[1]));
+        }
+    }
+
+    private static void drawUniverseLite(GuiGraphicsExtractor g, float cx, float cy, float r, int[] cols, float t,
+                                         float alpha, int which) {
+        if (alpha <= 0.01f || r < 2) return;
+        fillCircle(g, cx, cy, r * 1.1f, 1f, argb((int) (22 * alpha), cols[0]));
+        fillCircle(g, cx, cy, r, 1f, argb((int) (90 * alpha), 0x0B0A22));
+        for (int i = 0; i < 80; i++) {
+            float[] s = UNI_STARS[i];
+            int px = (int) (cx + s[0] * r), py = (int) (cy + s[1] * r);
+            g.fill(px, py, px + 1, py + 1, argb((int) (220 * alpha), 0xFFFFFF));
+        }
+        for (int i = 0; i < 2; i++) {
+            drawGalaxy(g, cx + MINI_POS[i * 2][0] * r, cy + MINI_POS[i * 2][1] * r, r * 0.25f,
+                    t * 0.04f + i * 1.3f + which, 0.5f, MINI_GALAXY, 0xFFF4D6, cols[i % 2], 0, 0, 0, alpha);
+        }
+        int dots = 90;
+        for (int i = 0; i < dots; i++) {
+            double ang = i * Math.PI * 2 / dots;
+            int px = (int) (cx + Math.cos(ang) * r), py = (int) (cy + Math.sin(ang) * r);
+            g.fill(px, py, px + 1, py + 1, argb((int) (200 * alpha), i % 2 == 0 ? cols[0] : cols[1]));
+        }
+    }
+
+    // =====================================================================
+    //  OMNIVERSE COLLISION -> THE CREATION (tier 13)
+    // =====================================================================
+    private static final float[][][] CRACKS = makeCracks(16, 22, 55);
+    private static final int[][][] OMNI_COLORS = {
+            {{0xFFE08A, 0xFFFFFF}, {0xB98CFF, 0x6BE4FF}},
+            {{0xFF4A4A, 0xFFA040}, {0x3FFFD0, 0x3FAAFF}},
+            {{0xFF9AD5, 0xFFFFFF}, {0x6A8CFF, 0x8A4AFF}},
+    };
+
+    private static int omCollide() { return (int) (holdTicks * 0.24f); }
+    private static int omShatter() { return (int) (holdTicks * 0.36f); }
+    private static int omBirth() { return (int) (holdTicks * 0.43f); }
+    private static int omFold() { return (int) (holdTicks * 0.88f); }
+    private static int omBang() { return (int) (holdTicks * 0.95f); }
+
+    private static int[] rainbow(int n, float offset) {
+        int[] out = new int[n];
+        for (int i = 0; i < n; i++) out[i] = hsv(i / (float) n + offset, 0.75f, 1f);
+        return out;
+    }
+
+    private static void tickOmniverse(int sinceLand, boolean holding, int sw, int sh) {
+        int collide = omCollide(), shatter = omShatter(), birth = omBirth(), fold = omFold(), bang = omBang();
+        int[][] oc = OMNI_COLORS[variant % 3];
+        float cx = sw / 2f, cy = sh * 0.55f;
+
+        if (sinceLand == 0) {
+            playSound(SoundEvents.BEACON_ACTIVATE, 0.3f);
+            playSound(SoundEvents.END_PORTAL_SPAWN, 0.3f);
+            playSound(SoundEvents.WARDEN_EMERGE, 0.5f);
+        }
+        if (sinceLand > 0 && sinceLand < collide && sinceLand % 15 == 0) {
+            playSound(SoundEvents.BEACON_AMBIENT, 0.3f + 1.2f * sinceLand / collide);
+        }
+        if (sinceLand == collide) {
+            starBurst(cx, cy, 450, rainbow(10, 0));
+            playSound(SoundEvents.ENDER_DRAGON_DEATH, 0.6f);
+            playSound(SoundEvents.WITHER_DEATH, 0.5f);
+            playSound(SoundEvents.WARDEN_SONIC_BOOM, 0.3f);
+            playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.4f);
+        }
+        // reality cracking
+        if (sinceLand > collide && sinceLand < shatter && (sinceLand - collide) % 7 == 0) {
+            playSound(SoundEvents.GLASS_BREAK, 0.6f + RANDOM.nextFloat() * 0.6f);
+        }
+        // reality SHATTERS
+        if (sinceLand == shatter) {
+            playSound(SoundEvents.GLASS_BREAK, 0.5f);
+            playSound(SoundEvents.GLASS_BREAK, 0.7f);
+            playSound(SoundEvents.GLASS_BREAK, 1.0f);
+            playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.3f);
+            for (int i = 0; i < 360; i++) {
+                float x = RANDOM.nextFloat() * sw, y = RANDOM.nextFloat() * sh;
+                float dx = x - cx, dy = y - cy;
+                float d = (float) Math.sqrt(dx * dx + dy * dy) + 0.01f;
+                float sp = 2 + RANDOM.nextFloat() * 5;
+                int c = RANDOM.nextInt(3) == 0 ? 0x1A1440 : (RANDOM.nextBoolean() ? oc[0][0] : oc[1][0]);
+                Particle p = new Particle(SHARD, x, y, dx / d * sp, dy / d * sp - 1, 60 + RANDOM.nextInt(40), c,
+                        3 + RANDOM.nextInt(5));
+                p.gravity = 0.08f;
+                p.drag = 0.99f;
+                add(p);
+            }
+        }
+        // THE CREATION is born
+        if (sinceLand == birth) {
+            playSound(SoundEvents.BEACON_ACTIVATE, 1.5f);
+            playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.6f);
+            playSound(SoundEvents.TOTEM_USE, 0.6f);
+            playSound(SoundEvents.AMETHYST_BLOCK_CHIME, 0.5f);
+        }
+        if (sinceLand > birth && sinceLand < fold) {
+            if ((sinceLand - birth) % 30 == 0) playSound(SoundEvents.BEACON_AMBIENT, 1.8f);
+            if ((sinceLand - birth) % 9 == 0) playSound(SoundEvents.AMETHYST_BLOCK_CHIME, 0.5f + RANDOM.nextFloat() * 1.5f);
+            float spin = sinceLand * 0.15f;
+            for (int arm = 0; arm < 6; arm++) {
+                float ang = spin + arm * (float) (Math.PI * 2 / 6);
+                Particle p = new Particle(STAR, cx, cy, Mth.cos(ang) * 3.5f, Mth.sin(ang) * 3.5f, 60,
+                        hsv(arm / 6f + sinceLand * 0.01f, 0.8f, 1f), 2);
+                p.gravity = 0;
+                p.drag = 0.995f;
+                add(p);
+            }
+        }
+        if (sinceLand == fold) {
+            playSound(SoundEvents.END_PORTAL_SPAWN, 2.0f);
+            playSound(SoundEvents.BEACON_DEACTIVATE, 1.0f);
+        }
+        if (sinceLand == bang) {
+            starBurst(cx, cy, 600, rainbow(14, 0.3f));
+            playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.6f);
+            playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.2f);
+            playSound(SoundEvents.TOTEM_USE, 1.0f);
+            playSound(SoundEvents.FIREWORK_ROCKET_LARGE_BLAST, 0.5f);
+        }
+    }
+
+    private static void renderOmniverse(GuiGraphicsExtractor g, float t, float sinceLand, float alpha, int sw, int sh) {
+        if (sinceLand < 0) return;
+        float fadeIn = Mth.clamp(sinceLand / 15f, 0, 1) * alpha;
+        if (fadeIn <= 0.01f) return;
+        int[][] oc = OMNI_COLORS[variant % 3];
+        int collide = omCollide(), shatter = omShatter(), birth = omBirth(), fold = omFold(), bang = omBang();
+        float cx = sw / 2f, cy = sh * 0.55f;
+        float base = Math.min(sw, sh);
+        float crackScale = Math.max(sw, sh) * 0.75f;
+
+        if (sinceLand < shatter) {
+            g.fill(0, 0, sw, sh, argb((int) (245 * fadeIn), 0x020108));
+            drawBackgroundStars(g, t, fadeIn, sw, sh);
+            drawNebula(g, t, fadeIn, sw, sh, new int[]{oc[0][0], oc[1][0], oc[0][1], oc[1][1]});
+        }
+
+        // ---- two omniverses approach ----
+        if (sinceLand < collide) {
+            float p = sinceLand / collide;
+            float fall = p * p;
+            float bigR = base * 0.36f;
+            float ax = Mth.lerp(fall, -bigR * 1.3f, cx - bigR * 0.5f);
+            float bx = Mth.lerp(fall, sw + bigR * 1.3f, cx + bigR * 0.5f);
+            drawOmniverse(g, ax, cy, bigR, oc[0], t, fadeIn, 1);
+            drawOmniverse(g, bx, cy, bigR, oc[1], t, fadeIn, -1);
+            if (p > 0.5f) {
+                int arcs = 1 + (int) ((p - 0.5f) * 12);
+                for (int i = 0; i < arcs; i++) {
+                    float y0 = cy + (RANDOM.nextFloat() - 0.5f) * bigR;
+                    jagged(g, ax + bigR * 0.6f, y0, bx - bigR * 0.6f, y0 + (RANDOM.nextFloat() - 0.5f) * 30,
+                            argb((int) (230 * fadeIn), hsv(RANDOM.nextFloat(), 0.7f, 1f)));
+                }
+            }
+            return;
+        }
+
+        // ---- collided: merging, and reality starts to CRACK ----
+        if (sinceLand < shatter) {
+            float since = sinceLand - collide;
+            float crackP = since / (shatter - collide);
+            float bigR = base * 0.36f * (1.1f + crackP * 0.6f);
+            drawOmniverse(g, cx, cy, bigR, oc[0], t * 2.5f, fadeIn, 1);
+            drawOmniverse(g, cx, cy, bigR * 0.85f, oc[1], t * 2.5f, fadeIn * 0.8f, -1);
+            drawCracks(g, cx, cy, crackScale, crackP, fadeIn);
+            if (since < 20) g.fill(0, 0, sw, sh, argb((int) ((1 - since / 20f) * 255), 0xFFFFFF));
+            return;
+        }
+
+        // ---- reality is gone: the white void ----
+        float sinceShatter = sinceLand - shatter;
+        float voidA = Mth.clamp(sinceShatter / 12f, 0, 1) * fadeIn;
+        g.fill(0, 0, sw, sh, argb((int) (235 * voidA), 0xFFFBF0));
+        drawNebula(g, t, voidA, sw, sh, new int[]{0xFFB3D9, 0xB3D9FF, 0xD9FFB3, 0xFFE0B3});
+        if (sinceShatter < 20) drawCracks(g, cx, cy, crackScale, 1f, fadeIn * (1 - sinceShatter / 20f));
+
+        // ---- THE CREATION ----
+        if (sinceLand >= birth && sinceLand < bang) {
+            float grow = easeOutBack(Mth.clamp((sinceLand - birth) / 40f, 0, 1));
+            float shrink = 1 - easeInCubic(Mth.clamp((sinceLand - fold) / (bang - fold), 0, 1));
+            drawMandala(g, cx, cy, base * 0.40f * grow * shrink, t, fadeIn, sw, sh);
+        }
+
+        // ---- rainbow big bang ----
+        float sinceBang = sinceLand - bang;
+        if (sinceBang >= 0) {
+            shockRings(g, cx, cy, sinceBang, fadeIn, rainbow(4, t * 0.01f));
+            if (sinceBang < 30) g.fill(0, 0, sw, sh, argb((int) ((1 - sinceBang / 30f) * 255), 0xFFFFFF));
+        }
+    }
+
+    /** An omniverse: rings of whole multiverses circling a blazing core. */
+    private static void drawOmniverse(GuiGraphicsExtractor g, float cx, float cy, float r, int[] cols, float t,
+                                      float alpha, int dir) {
+        fillCircle(g, cx, cy, r * 1.15f, 1f, argb((int) (25 * alpha), cols[0]));
+        fillCircle(g, cx, cy, r, 1f, argb((int) (120 * alpha), 0x050418));
+        for (int ring = 0; ring < 3; ring++) {
+            int count = 6 + ring * 5;
+            float rr = r * (0.3f + ring * 0.27f);
+            float rot = t * 0.02f * (ring % 2 == 0 ? dir : -dir) * (1 + ring * 0.3f);
+            float br = r * (0.11f - ring * 0.025f);
+            int dots = 90 + ring * 30;
+            for (int i = 0; i < dots; i++) {
+                double a = i * Math.PI * 2 / dots;
+                int px = (int) (cx + Math.cos(a) * rr), py = (int) (cy + Math.sin(a) * rr);
+                g.fill(px, py, px + 1, py + 1, argb((int) (80 * alpha), cols[1]));
+            }
+            for (int j = 0; j < count; j++) {
+                float ang = rot + j * (float) (Math.PI * 2 / count);
+                float bx = cx + Mth.cos(ang) * rr, by = cy + Mth.sin(ang) * rr;
+                int c = cols[j % 2];
+                fillCircle(g, bx, by, br * 1.35f, 1f, argb((int) (45 * alpha), c));
+                fillCircle(g, bx, by, br, 1f, argb((int) (160 * alpha), 0x0B0A22));
+                for (int k = 0; k < 3; k++) {
+                    int sx = (int) (bx + Mth.cos(ang * 3 + k * 2.1f + t * 0.05f) * br * 0.5f);
+                    int sy = (int) (by + Mth.sin(ang * 3 + k * 2.1f + t * 0.05f) * br * 0.5f);
+                    g.fill(sx, sy, sx + 2, sy + 1, argb((int) (230 * alpha), k == 0 ? 0xFFFFFF : c));
+                }
+            }
+        }
+        fillCircle(g, cx, cy, r * 0.16f, 1f, argb((int) (90 * alpha), cols[0]));
+        fillCircle(g, cx, cy, r * 0.08f, 1f, argb((int) (255 * alpha), 0xFFFFFF));
+        int dots = 240;
+        for (int i = 0; i < dots; i++) {
+            double ang = i * Math.PI * 2 / dots;
+            float shimmer = 0.5f + 0.5f * (float) Math.sin(ang * 8 + t * 0.2f * dir);
+            int px = (int) (cx + Math.cos(ang) * r), py = (int) (cy + Math.sin(ang) * r);
+            g.fill(px, py, px + 2, py + 2, argb((int) (230 * alpha * (0.3f + 0.7f * shimmer)), shimmer > 0.5f ? cols[0] : cols[1]));
+        }
+    }
+
+    private static void drawCracks(GuiGraphicsExtractor g, float cx, float cy, float scale, float progress, float alpha) {
+        for (float[][] path : CRACKS) {
+            int n = Math.min(path.length - 1, (int) (progress * (path.length - 1)));
+            for (int i = 0; i < n; i++) {
+                float x0 = cx + path[i][0] * scale, y0 = cy + path[i][1] * scale;
+                float x1 = cx + path[i + 1][0] * scale, y1 = cy + path[i + 1][1] * scale;
+                line(g, x0 - 1, y0 - 1, x1 - 1, y1 - 1, 4, argb((int) (90 * alpha), 0xBFD8FF));
+                line(g, x0, y0, x1, y1, 2, argb((int) (255 * alpha), 0xFFFFFF));
+            }
+        }
+    }
+
+    /** THE CREATION: a giant rotating rainbow mandala made of sacred geometry. */
+    private static void drawMandala(GuiGraphicsExtractor g, float cx, float cy, float r, float t, float alpha, int sw, int sh) {
+        if (r < 2) return;
+        float reach = Math.max(sw, sh);
+        int beams = 16;
+        for (int i = 0; i < beams; i++) {
+            float ang = t * 0.01f + i * (float) (Math.PI * 2 / beams);
+            float pulse = 0.5f + 0.5f * Mth.sin(t * 0.12f + i);
+            g.pose().pushMatrix();
+            g.pose().translate(cx, cy);
+            g.pose().rotate(ang);
+            g.fill((int) (r * 0.2f), -1, (int) reach, 2,
+                    argb((int) (90 * alpha * pulse), hsv(i / (float) beams + t * 0.005f, 0.7f, 1f)));
+            g.pose().popMatrix();
+        }
+        fillCircle(g, cx, cy, r * 1.25f, 1f, argb((int) (35 * alpha), hsv(t * 0.01f, 0.5f, 1f)));
+
+        // nested rotating polygons: triangle, square, pentagon ... octagon
+        for (int k = 0; k < 6; k++) {
+            int sides = 3 + k;
+            float pr = r * (0.25f + k * 0.14f);
+            float rot = t * 0.02f * (k % 2 == 0 ? 1 : -1) * (1 + k * 0.25f);
+            int c = argb((int) (255 * alpha), hsv(k / 6f + t * 0.008f, 0.85f, 0.95f));
+            for (int v = 0; v < sides; v++) {
+                float a0 = rot + v * (float) (Math.PI * 2 / sides);
+                float a1 = rot + (v + 1) * (float) (Math.PI * 2 / sides);
+                line(g, cx + Mth.cos(a0) * pr, cy + Mth.sin(a0) * pr, cx + Mth.cos(a1) * pr, cy + Mth.sin(a1) * pr, 2, c);
+            }
+        }
+
+        // sacred star: every point of an octagon joined to the others
+        float sr = r * 0.95f;
+        float srot = -t * 0.006f;
+        for (int i = 0; i < 8; i++) {
+            for (int j = i + 2; j < 8; j++) {
+                if (i == 0 && j == 7) continue;
+                float a0 = srot + i * (float) (Math.PI / 4), a1 = srot + j * (float) (Math.PI / 4);
+                line(g, cx + Mth.cos(a0) * sr, cy + Mth.sin(a0) * sr, cx + Mth.cos(a1) * sr, cy + Mth.sin(a1) * sr, 1,
+                        argb((int) (110 * alpha), hsv((i + j) / 16f + t * 0.01f, 0.6f, 0.9f)));
+            }
+        }
+
+        // rings of light
+        int dots = 260;
+        for (int i = 0; i < dots; i++) {
+            double ang = i * Math.PI * 2 / dots + t * 0.01f;
+            int px = (int) (cx + Math.cos(ang) * r), py = (int) (cy + Math.sin(ang) * r);
+            g.fill(px - 1, py - 1, px + 2, py + 2, argb((int) (255 * alpha), hsv(i / (float) dots + t * 0.01f, 0.8f, 1f)));
+        }
+        for (int i = 0; i < 120; i++) {
+            double ang = i * Math.PI * 2 / 120 - t * 0.02f;
+            int px = (int) (cx + Math.cos(ang) * r * 0.62f), py = (int) (cy + Math.sin(ang) * r * 0.62f);
+            g.fill(px, py, px + 2, py + 2, argb((int) (220 * alpha), hsv(i / 120f - t * 0.01f, 0.7f, 1f)));
+        }
+
+        // the core: an eye of pure light
+        fillCircle(g, cx, cy, r * 0.16f, 1f, argb((int) (255 * alpha), 0xFFFFFF));
+        fillCircle(g, cx, cy, r * 0.09f, 1f, argb((int) (255 * alpha), hsv(t * 0.02f, 0.9f, 1f)));
+        fillCircle(g, cx, cy, r * 0.04f, 1f, argb((int) (255 * alpha), 0x000000));
+    }
+
     // =====================================================================
     //  Shared space helpers
     // =====================================================================
@@ -1241,7 +2046,8 @@ public final class PopupRenderer {
 
     private static void line(GuiGraphicsExtractor g, float x0, float y0, float x1, float y1, int size, int color) {
         float dx = x1 - x0, dy = y1 - y0;
-        int steps = (int) (Math.max(Math.abs(dx), Math.abs(dy)) / 2) + 1;
+        float stepLen = Math.max(2f, size * 0.9f);   // thick lines can use fewer, bigger steps
+        int steps = (int) (Math.max(Math.abs(dx), Math.abs(dy)) / stepLen) + 1;
         for (int i = 0; i <= steps; i++) {
             float f = i / (float) steps;
             int x = (int) (x0 + dx * f), y = (int) (y0 + dy * f);
@@ -1362,6 +2168,25 @@ public final class PopupRenderer {
                     }
                     g.fill(px - 1, py - 1, px + 3, py + 3, argb(a, 0xFFFFFF));
                 }
+                case HEART -> {
+                    g.fill(px - 3, py - 2, px - 1, py, argb(a, color));
+                    g.fill(px + 1, py - 2, px + 3, py, argb(a, color));
+                    g.fill(px - 3, py, px + 3, py + 1, argb(a, color));
+                    g.fill(px - 2, py + 1, px + 2, py + 2, argb(a, color));
+                    g.fill(px - 1, py + 2, px + 1, py + 3, argb(a, color));
+                    g.fill(px - 2, py - 1, px - 1, py, argb(a, 0xFFFFFF));
+                }
+                case ORB -> {
+                    int c = (life % 8 < 4) ? color : 0xE8FF8A;
+                    g.fill(px - 2, py - 2, px + 3, py + 3, argb(a / 3, c));
+                    g.fill(px - 1, py - 1, px + 2, py + 2, argb(a, c));
+                    g.fill(px, py, px + 1, py + 1, argb(a, 0xFFFFFF));
+                }
+                case SHARD -> {
+                    g.fill(px, py, px + size, py + size, argb(a, color));
+                    g.fill(px, py, px + size, py + 1, argb(a, 0xFFFFFF));
+                    g.fill(px, py, px + 1, py + size, argb(a / 2, 0xFFFFFF));
+                }
                 case EMBER -> {
                     int c = (life % 4 < 2) ? color : 0xFFF2A0;
                     g.fill(px, py, px + 2, py + 2, argb(a, c));
@@ -1468,6 +2293,54 @@ public final class PopupRenderer {
         return out;
     }
 
+
+    /** Connects every node to its k nearest neighbours (no duplicates). */
+    private static int[][] makeEdges(float[][] nodes, int k) {
+        List<int[]> edges = new ArrayList<>();
+        for (int i = 0; i < nodes.length; i++) {
+            Integer[] order = new Integer[nodes.length];
+            for (int j = 0; j < nodes.length; j++) order[j] = j;
+            final int fi = i;
+            java.util.Arrays.sort(order, (x, y) -> Float.compare(dist2(nodes[fi], nodes[x]), dist2(nodes[fi], nodes[y])));
+            for (int n = 1; n <= k && n < order.length; n++) {
+                int j = order[n];
+                boolean dup = false;
+                for (int[] e : edges) {
+                    if ((e[0] == i && e[1] == j) || (e[0] == j && e[1] == i)) {
+                        dup = true;
+                        break;
+                    }
+                }
+                if (!dup) edges.add(new int[]{i, j});
+            }
+        }
+        return edges.toArray(new int[0][]);
+    }
+
+    private static float dist2(float[] a, float[] b) {
+        float dx = a[0] - b[0], dy = a[1] - b[1];
+        return dx * dx + dy * dy;
+    }
+
+    /** Cracks in reality: random zig-zag paths from the centre out past the screen edge. */
+    private static float[][][] makeCracks(int count, int points, long seed) {
+        Random r = new Random(seed);
+        float[][][] out = new float[count][points][2];
+        for (int c = 0; c < count; c++) {
+            double ang = c * Math.PI * 2 / count + r.nextGaussian() * 0.15;
+            float x = 0, y = 0;
+            float step = 1.5f / points;
+            for (int i = 0; i < points; i++) {
+                out[c][i][0] = x;
+                out[c][i][1] = y;
+                ang += r.nextGaussian() * 0.35;
+                x += (float) Math.cos(ang) * step;
+                y += (float) Math.sin(ang) * step;
+            }
+        }
+        return out;
+    }
+
     /** Tornado funnel: {height 0..1, angle, speed, brightness}. */
     private static float[][] makeTornado(int count) {
         Random r = new Random(4);
@@ -1491,8 +2364,12 @@ public final class PopupRenderer {
     /** Main colour for this popup: theme colour, tornado colour, or a moving rainbow for 1B+. */
     private static int color(float t, float offset) {
         if (tier <= 5) return THEMES[theme][0];
-        if (tier == 6) return variant == 0 ? 0xC9CED6 : variant == 1 ? 0xFF8A1A : 0x3FBF5A;
-        float speed = tier >= 8 ? 0.04f : 0.02f;
+        if (tier == 6) {
+            if (variant == 4) return hsv((t * 0.03f + offset / 360f) % 1f, 0.8f, 1f);
+            return new int[]{0xC9CED6, 0xFF8A1A, 0x3FBF5A, 0xBFEFFF}[variant];
+        }
+        if (tier == 12) return hsv(0.76f + 0.04f * Mth.sin(t * 0.1f + offset), 0.85f, 0.7f + 0.3f * Mth.sin(t * 0.2f));
+        float speed = tier >= 13 ? 0.08f : tier >= 8 ? 0.04f : 0.02f;
         return hsv((t * speed + offset / 360f) % 1f, 0.85f, 1f);
     }
 
