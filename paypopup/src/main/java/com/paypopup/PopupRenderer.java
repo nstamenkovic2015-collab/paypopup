@@ -37,6 +37,9 @@ import java.util.Random;
  *                  across the screen, a dark core swallows everything, implodes and bursts
  *   13    $1T+     OMNIVERSE COLLISION: two omniverses collide, reality cracks and shatters,
  *                  and THE CREATION is born: a giant rainbow mandala that folds into a big bang
+ *   14    $5T+     A CREATION OF THE GODS - a full minute: the heavens open, three giant eyes
+ *                  wake up, the gods forge a sun, the screen cracks, a FAKE BLUESCREEN,
+ *                  then ascension (everything at once) and the birth of a new galaxy
  *
  * Every popup also gets a random colour theme (gold, emerald, diamond, amethyst, redstone),
  * a random box style (classic, neon, royal, glitch) and a random variant (5 per tier).
@@ -49,7 +52,7 @@ public final class PopupRenderer {
     private static final double[] MIN_AMOUNT = {
             0, 100_000d, 1_000_000d, 5_000_000d, 10_000_000d, 100_000_000d, 500_000_000d,
             1_000_000_000d, 10_000_000_000d, 25_000_000_000d, 50_000_000_000d, 100_000_000_000d,
-            500_000_000_000d, 1_000_000_000_000d
+            500_000_000_000d, 1_000_000_000_000d, 5_000_000_000_000d
     };
     private static final String[][] TITLES = {
             {"PAYMENT RECEIVED", "PAYMENT RECEIVED", "KA-CHING!", "CHA-CHING!", "MONEY IN!"},
@@ -66,9 +69,10 @@ public final class PopupRenderer {
             {"MULTIVERSE COLLAPSE"},
             {"DARK MATTER EVENT"},
             {"OMNIVERSE COLLISION"},
+            {"A CREATION OF THE GODS"},
     };
-    private static final int[] COIN_COUNT = {14, 22, 35, 40, 55, 80, 90, 120, 180, 200, 220, 260, 300, 340};
-    private static final float[] SHAKE = {0, 0, 1f, 1f, 2f, 4f, 6f, 7f, 12f, 14f, 18f, 22f, 24f, 26f};
+    private static final int[] COIN_COUNT = {14, 22, 35, 40, 55, 80, 90, 120, 180, 200, 220, 260, 300, 340, 400};
+    private static final float[] SHAKE = {0, 0, 1f, 1f, 2f, 4f, 6f, 7f, 12f, 14f, 18f, 22f, 24f, 26f, 30f};
 
     /** Colour themes: {main, light, dark}. */
     private static final int[][] THEMES = {
@@ -131,6 +135,7 @@ public final class PopupRenderer {
         if (tier == 11) holdTicks = Math.max(holdTicks, 330);
         if (tier == 12) holdTicks = Math.max(holdTicks, 380);
         if (tier == 13) holdTicks = Math.max(holdTicks, 460);
+        if (tier == 14) holdTicks = G_TOTAL;
         if (tier == 7 && variant == 4) holdTicks = Math.max(holdTicks, 140);
         PLANETS.clear();
         BOLTS.clear();
@@ -229,6 +234,7 @@ public final class PopupRenderer {
             case 11 -> tickMultiverse(sinceLand, holding, sw, sh);
             case 12 -> tickDarkMatter(sinceLand, holding, sw, sh);
             case 13 -> tickOmniverse(sinceLand, holding, sw, sh);
+            case 14 -> tickGods(sinceLand, holding, sw, sh);
             default -> { }
         }
 
@@ -299,6 +305,7 @@ public final class PopupRenderer {
         if (tier == 11) renderMultiverse(g, t, sinceLand, alpha, sw, sh);
         if (tier == 12) renderDarkMatter(g, t, sinceLand, alpha, sw, sh);
         if (tier == 13) renderOmniverse(g, t, sinceLand, alpha, sw, sh);
+        if (tier == 14) renderGods(g, font, t, sinceLand, alpha, sw, sh);
         if ((tier == 7 && variant == 3) || tier == 8) renderAurora(g, t, sinceLand, alpha, sw);
         if (tier == 7 && variant == 4) renderSupernova(g, t, sinceLand, alpha, sw, sh);
         if (tier == 8) godRays(g, t, sinceLand, alpha, sw, sh);
@@ -371,6 +378,7 @@ public final class PopupRenderer {
             float sb = sinceLand - omBang();
             if (sb >= 0 && sb < 30) shake = Math.max(shake, 24f * (1 - sb / 30f));
         }
+        if (tier == 14) shake = godsShake(sinceLand, outStart - SLIDE_IN_TICKS);
         if ((tier == 10 || tier == 11 || tier == 12) && bhActive) shake = Math.max(shake, 1.5f + bhRadius * 0.04f);
         float sx = (RANDOM.nextFloat() - 0.5f) * shake * 2;
         float sy = (RANDOM.nextFloat() - 0.5f) * shake * 2;
@@ -489,6 +497,7 @@ public final class PopupRenderer {
         g.pose().popMatrix();
 
         drawParticles(g, font, partial);
+        if (tier == 14) renderBlueScreen(g, font, t, sinceLand, sw, sh);
     }
 
     // =====================================================================
@@ -1966,6 +1975,426 @@ public final class PopupRenderer {
         fillCircle(g, cx, cy, r * 0.04f, 1f, argb((int) (255 * alpha), 0x000000));
     }
 
+
+    // =====================================================================
+    //  A CREATION OF THE GODS (tier 14) - one full minute
+    // =====================================================================
+    private static final int G_EYES = 120;      //  6s  the gods wake up
+    private static final int G_FORGE = 320;     // 16s  they forge a sun
+    private static final int G_CRACK = 560;     // 28s  the screen breaks
+    private static final int G_BSOD = 600;      // 30s  FAKE BLUESCREEN
+    private static final int G_ASCEND = 700;    // 35s  everything at once
+    private static final int G_CREATE = 1000;   // 50s  a new galaxy is born
+    private static final int G_FINAL = 1160;    // 58s  final flash
+    private static final int G_TOTAL = 1200;    // 60s
+    private static final String[] RUNES = {"✦", "☀", "☾", "♆", "♄", "♃", "♂", "♀", "☿", "⚡", "✧", "☄"};
+    private static final boolean[][] FAKE_QR = makeFakeQr(21, 1234);
+    private static final float[][] EYE_POS = {{0.2f, 0.44f}, {0.5f, 0.36f}, {0.8f, 0.44f}};
+
+    private static void tickGods(int sl, boolean holding, int sw, int sh) {
+        float cx = sw / 2f;
+        float sunY = sh * 0.62f;
+        float base = Math.min(sw, sh);
+
+        // ---- the heavens open ----
+        if (sl == 0) {
+            playSound(SoundEvents.BEACON_ACTIVATE, 0.5f);
+            playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.5f);
+        }
+        if (sl >= 0 && sl < G_EYES) {
+            if (sl % 20 == 0) playSound(SoundEvents.BEACON_AMBIENT, 0.6f + sl / (float) G_EYES);
+            for (int i = 0; i < 3; i++) {
+                float dir = RANDOM.nextBoolean() ? 1 : -1;
+                Particle p = new Particle(STAR, cx, RANDOM.nextFloat() * sh, dir * (1 + RANDOM.nextFloat() * 3),
+                        (RANDOM.nextFloat() - 0.5f), 50, RANDOM.nextBoolean() ? 0xFFD86B : 0xFFF6C8, 2);
+                p.gravity = 0;
+                p.drag = 0.99f;
+                add(p);
+            }
+        }
+
+        // ---- the gods wake up ----
+        if (sl == G_EYES) {
+            playSound(SoundEvents.ENDER_DRAGON_GROWL, 0.5f);
+            playSound(SoundEvents.BEACON_ACTIVATE, 0.8f);
+        }
+        if (sl > G_EYES && sl < G_FORGE && sl % 35 == 0) {
+            int e = RANDOM.nextInt(3);
+            float ex = EYE_POS[e][0] * sw, ey = EYE_POS[e][1] * sh;
+            BOLTS.add(new Bolt(ex, ey, ex + (RANDOM.nextFloat() - 0.5f) * 80, sh - 4, 0xFFE9A8));
+            playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.9f + RANDOM.nextFloat() * 0.3f);
+        }
+
+        // ---- the forge: hammer strikes ----
+        if (sl >= G_FORGE + 20 && sl < G_CRACK && (sl - G_FORGE - 20) % 30 == 0) {
+            playSound(SoundEvents.ANVIL_LAND, 0.6f + RANDOM.nextFloat() * 0.3f);
+            playSound(SoundEvents.FIREWORK_ROCKET_BLAST, 0.6f);
+            for (int i = 0; i < 40; i++) {
+                double a = RANDOM.nextDouble() * Math.PI * 2;
+                float sp = 2 + RANDOM.nextFloat() * 5;
+                Particle p = new Particle(SPARK, cx, sunY, (float) Math.cos(a) * sp, (float) Math.sin(a) * sp,
+                        20 + RANDOM.nextInt(15), RANDOM.nextBoolean() ? 0xFFB03A : 0xFFF2A0, 2);
+                p.gravity = 0.15f;
+                add(p);
+            }
+        }
+        if (sl >= G_FORGE && sl < G_CRACK && (sl - G_FORGE) % 40 == 39) {
+            playSound(SoundEvents.AMETHYST_BLOCK_CHIME, 0.8f + RANDOM.nextFloat() * 0.6f);   // a planet is born
+        }
+
+        // ---- the screen cracks ----
+        if (sl >= G_CRACK && sl < G_BSOD) {
+            if ((sl - G_CRACK) % 6 == 0) playSound(SoundEvents.GLASS_BREAK, 0.6f + RANDOM.nextFloat() * 0.6f);
+            if ((sl - G_CRACK) % 8 == 0) playSound(SoundEvents.WARDEN_HEARTBEAT, 1.0f + (sl - G_CRACK) / 40f);
+        }
+        // (the bluescreen itself is silent... for extra realism)
+        if (sl == G_BSOD + 80) playSound(SoundEvents.PLAYER_LEVELUP, 0.5f);
+
+        // ---- the bluescreen shatters: ASCENSION ----
+        if (sl == G_ASCEND) {
+            for (int i = 0; i < 320; i++) {
+                float x = RANDOM.nextFloat() * sw, y = RANDOM.nextFloat() * sh;
+                float dx = x - cx, dy = y - sh / 2f;
+                float d = (float) Math.sqrt(dx * dx + dy * dy) + 0.01f;
+                float sp = 2 + RANDOM.nextFloat() * 5;
+                Particle p = new Particle(SHARD, x, y, dx / d * sp, dy / d * sp - 1, 50 + RANDOM.nextInt(40),
+                        RANDOM.nextInt(4) == 0 ? 0xFFFFFF : 0x0078D7, 3 + RANDOM.nextInt(5));
+                p.gravity = 0.1f;
+                p.drag = 0.99f;
+                add(p);
+            }
+            playSound(SoundEvents.GLASS_BREAK, 0.5f);
+            playSound(SoundEvents.GLASS_BREAK, 0.8f);
+            playSound(SoundEvents.TOTEM_USE, 0.9f);
+            playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.0f);
+            playSound(SoundEvents.ENDER_DRAGON_GROWL, 0.7f);
+        }
+        if (sl > G_ASCEND && sl < G_CREATE) {
+            tickLegendary(true, sl, sw, sh, 0);
+            tickLegendary(true, sl, sw, sh, 1);
+            if (sl % 3 == 0) tickLegendary(true, sl, sw, sh, 2);
+            tickLegendary(true, sl, sw, sh, 3);
+            for (int i = 0; i < 4; i++) confetti(sw);
+            float spin = sl * 0.15f;
+            for (int arm = 0; arm < 6; arm++) {
+                float ang = spin + arm * (float) (Math.PI * 2 / 6);
+                Particle p = new Particle(STAR, cx, sunY, Mth.cos(ang) * 3.5f, Mth.sin(ang) * 3.5f, 60,
+                        hsv(arm / 6f + sl * 0.01f, 0.8f, 1f), 2);
+                p.gravity = 0;
+                p.drag = 0.995f;
+                add(p);
+            }
+            if (sl % 100 == 0) playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.8f + RANDOM.nextFloat() * 0.4f);
+            if (sl % 40 == 0) playSound(SoundEvents.BEACON_AMBIENT, 1.6f);
+        }
+
+        // ---- creation: a new galaxy ----
+        if (sl == G_CREATE) playSound(SoundEvents.BEACON_DEACTIVATE, 0.8f);
+        if (sl == G_CREATE + 30) {
+            starBurst(cx, sunY, 300, new int[]{0xFFFFFF, 0xFFF1C9, 0x9FC3FF});
+            playSound(SoundEvents.BEACON_ACTIVATE, 1.2f);
+            playSound(SoundEvents.TOTEM_USE, 1.2f);
+        }
+        if (sl > G_CREATE + 30 && sl < G_FINAL && sl % 15 == 0) {
+            playSound(SoundEvents.AMETHYST_BLOCK_CHIME, 0.6f + RANDOM.nextFloat() * 1.2f);
+        }
+
+        // ---- the end ----
+        if (sl == G_FINAL) {
+            starBurst(cx, sh / 2f, 500, new int[]{0xFFD86B, 0xFFF6C8, 0xFFFFFF, 0xFFB03A});
+            playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.0f);
+            playSound(SoundEvents.TOTEM_USE, 1.0f);
+            playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 0.6f);
+        }
+    }
+
+    private static float godsShake(float sl, float hold) {
+        if (sl < 0) return 0;
+        if (sl >= G_BSOD && sl < G_ASCEND) return 0;                          // a real crash doesn't shake
+        if (sl < 20) return 8 * (1 - sl / 20f);
+        if (sl >= G_FORGE + 20 && sl < G_CRACK) {
+            float ss = (sl - G_FORGE - 20) % 30;
+            return ss < 8 ? 7 * (1 - ss / 8f) : 0.5f;
+        }
+        if (sl >= G_CRACK && sl < G_BSOD) return 3 + 14 * (sl - G_CRACK) / (G_BSOD - G_CRACK);
+        if (sl >= G_ASCEND && sl < G_ASCEND + 25) return 20 * (1 - (sl - G_ASCEND) / 25f);
+        if (sl >= G_ASCEND && sl < G_CREATE) return 3;
+        if (sl >= G_FINAL && sl < G_FINAL + 30) return 22 * (1 - (sl - G_FINAL) / 30f);
+        return 0.5f;
+    }
+
+    private static void renderGods(GuiGraphicsExtractor g, Font font, float t, float sl, float alpha, int sw, int sh) {
+        if (sl < 0) return;
+        float fade = Mth.clamp(sl / 15f, 0, 1) * alpha;
+        if (fade <= 0.01f) return;
+        float cx = sw / 2f;
+        float sunY = sh * 0.62f;
+        float base = Math.min(sw, sh);
+        boolean heaven = sl >= G_ASCEND && sl < G_CREATE;
+
+        // ---- background ----
+        if (heaven) {
+            g.fill(0, 0, sw, sh, argb((int) (240 * fade), 0x1E1204));
+            fillCircle(g, cx, sh * 0.55f, base * 0.65f, 0.8f, argb((int) (40 * fade), 0xFFC94A));
+            drawNebula(g, t, fade, sw, sh, new int[]{0xFFC94A, 0xFF8AD8, 0xFFE9A8, 0x9FC3FF});
+            renderAurora(g, t, sl - G_ASCEND, fade, sw);
+            godRays(g, t, sl - G_ASCEND, fade, sw, sh);
+            spotlight(g, sw * 0.1f, sh, -1.57f + 0.6f * Mth.sin(t * 0.05f), sh * 1.2f, hsv(t * 0.01f, 0.6f, 1f), fade);
+            spotlight(g, sw * 0.9f, sh, -1.57f - 0.6f * Mth.sin(t * 0.05f + 1), sh * 1.2f, hsv(t * 0.01f + 0.5f, 0.6f, 1f), fade);
+        } else {
+            float spaceA = sl < G_CREATE ? 1 : Mth.clamp((sl - G_CREATE) / 20f, 0, 1);
+            g.fill(0, 0, sw, sh, argb((int) (240 * fade * spaceA), 0x0A0612));
+            drawBackgroundStars(g, t, fade, sw, sh);
+            drawNebula(g, t, fade, sw, sh, new int[]{0xFFC94A, 0x8A4AFF, 0xFF8AD8, 0x4A6AFF});
+        }
+
+        // ---- 1. the gates of heaven open ----
+        if (sl < G_FORGE) {
+            float open = easeOutCubic(Mth.clamp(sl / 100f, 0, 1));
+            float doorFade = sl < G_EYES ? 1 : 1 - Mth.clamp((sl - G_EYES) / 60f, 0, 1);
+            float gap = open * sw * 0.5f;
+            int lightA = (int) (200 * fade * (0.5f + 0.5f * doorFade));
+            g.fill((int) (cx - gap), 0, (int) (cx + gap), sh, argb(lightA, 0xFFE9A8));
+            g.fill((int) (cx - gap * 0.4f), 0, (int) (cx + gap * 0.4f), sh, argb(lightA, 0xFFFFF4));
+            if (doorFade > 0.01f) {
+                int da = (int) (255 * fade * doorFade);
+                g.fill(0, 0, (int) (cx - gap), sh, argb(da, 0x1A1028));
+                g.fill((int) (cx + gap), 0, sw, sh, argb(da, 0x1A1028));
+                g.fill((int) (cx - gap) - 3, 0, (int) (cx - gap), sh, argb(da, 0xFFD86B));
+                g.fill((int) (cx + gap), 0, (int) (cx + gap) + 3, sh, argb(da, 0xFFD86B));
+                for (int y = 12, i = 0; y < sh; y += 22, i++) {
+                    int rc = argb(da, 0xFFD86B);
+                    g.centeredText(font, RUNES[i % RUNES.length], (int) (cx - gap) - 12, y, rc);
+                    g.centeredText(font, RUNES[(i + 5) % RUNES.length], (int) (cx + gap) + 12, y, rc);
+                }
+            }
+        }
+
+        // ---- 2. three giant eyes (awake until creation) ----
+        if (sl >= G_EYES && sl < G_CREATE + 50) {
+            float openP = easeOutCubic(Mth.clamp((sl - G_EYES) / 30f, 0, 1));
+            float closeP = 1 - Mth.clamp((sl - G_CREATE) / 40f, 0, 1);
+            for (int i = 0; i < 3; i++) {
+                float phase = (sl + i * 37) % 90;
+                float blink = phase < 6 ? Math.abs(phase - 3) / 3f : 1f;
+                drawEye(g, EYE_POS[i][0] * sw, EYE_POS[i][1] * sh, sw * 0.11f, openP * closeP * blink, t, i,
+                        fade * (sl >= G_BSOD && sl < G_ASCEND ? 0 : 1));
+            }
+        }
+
+        // ---- 3. the forge: a sun hammered into existence ----
+        if (sl >= G_FORGE && sl < G_ASCEND) {
+            float grow = easeOutCubic(Mth.clamp((sl - G_FORGE) / 120f, 0, 1));
+            float r = base * 0.12f * grow * (1 + 0.05f * Mth.sin(t * 0.3f));
+            drawSun(g, cx, sunY, r, t, fade);
+            if (sl >= G_FORGE + 20 && sl < G_CRACK) {
+                float ss = (sl - G_FORGE - 20) % 30;
+                if (ss < 5) {
+                    g.fill(0, 0, sw, sh, argb((int) ((1 - ss / 5f) * 110), 0xFFF2C8));
+                    shockRings(g, cx, sunY, ss * 3, fade, new int[]{0xFFD86B});
+                }
+            }
+            // rings of runes orbiting the sun
+            for (int ring = 0; ring < 2; ring++) {
+                int n = ring == 0 ? 12 : 16;
+                float rr = r * (ring == 0 ? 2.2f : 3.0f) + 6;
+                float rot = t * 0.02f * (ring == 0 ? 1 : -1);
+                for (int i = 0; i < n; i++) {
+                    float a = rot + i * (float) (Math.PI * 2 / n);
+                    g.centeredText(font, RUNES[(i + ring * 3) % RUNES.length], (int) (cx + Mth.cos(a) * rr),
+                            (int) (sunY + Mth.sin(a) * rr * 0.6f) - 4, argb((int) (220 * fade * grow), 0xFFD86B));
+                }
+            }
+            drawForgedPlanets(g, cx, sunY, r, t, sl - G_FORGE, fade);
+        }
+
+        // ---- 4. cracks + static before the crash ----
+        if (sl >= G_CRACK && sl < G_BSOD) {
+            float p = (sl - G_CRACK) / (G_BSOD - G_CRACK);
+            drawCracks(g, cx, sh / 2f, Math.max(sw, sh) * 0.75f, p, fade);
+            int noise = (int) (300 * p);
+            for (int i = 0; i < noise; i++) {
+                int x = RANDOM.nextInt(Math.max(1, sw)), y = RANDOM.nextInt(Math.max(1, sh));
+                int v = RANDOM.nextInt(256);
+                g.fill(x, y, x + 2, y + 2, argb(200, (v << 16) | (v << 8) | v));
+            }
+            for (int i = 0; i < 3; i++) {
+                int gy = RANDOM.nextInt(Math.max(1, sh));
+                g.fill(0, gy, sw, gy + 1 + RANDOM.nextInt(4), argb(90, RANDOM.nextBoolean() ? 0xFF2A6D : 0x2AF6FF));
+            }
+        }
+
+        // ---- 5. ascension: a giant mandala at the heart of heaven ----
+        if (heaven) {
+            float grow = easeOutBack(Mth.clamp((sl - G_ASCEND) / 30f, 0, 1));
+            drawMandala(g, cx, sunY, base * 0.32f * grow, t * 1.5f, fade, sw, sh);
+            float ts = 1.6f + 0.2f * Mth.sin(t * 0.2f);
+            bigText(g, font, "A CREATION OF THE GODS", cx, sh * 0.9f, ts, argb((int) (255 * fade), hsv(t * 0.02f, 0.6f, 1f)));
+        }
+
+        // ---- 6. creation: the mandala collapses and a new galaxy unfolds ----
+        if (sl >= G_CREATE) {
+            float c = sl - G_CREATE;
+            if (c < 30) {
+                drawMandala(g, cx, sunY, base * 0.32f * (1 - easeInCubic(c / 30f)), t * 1.5f, fade, sw, sh);
+            } else {
+                if (c < 40) g.fill(0, 0, sw, sh, argb((int) ((1 - (c - 30) / 10f) * 255), 0xFFFFFF));
+                float gp = easeOutCubic(Mth.clamp((c - 30) / 110f, 0, 1));
+                drawGalaxy(g, cx, sunY, base * 0.42f * gp, t * 0.03f, 0.45f, MILKY_WAY, 0xFFF1C9,
+                        hsv(t * 0.004f + 0.55f, 0.5f, 1f), 0, 0, 0, fade);
+                drawForgedPlanets(g, cx, sunY, base * 0.06f, t, 400, fade * gp);
+            }
+        }
+
+        // ---- 7. the final flash ----
+        if (sl >= G_FINAL) {
+            float f = sl - G_FINAL;
+            shockRings(g, cx, sh / 2f, f, fade, new int[]{0xFFD86B, 0xFFFFFF, 0xFFB03A});
+            if (f < 20) g.fill(0, 0, sw, sh, argb((int) ((1 - f / 20f) * 240), 0xFFF6C8));
+            float ts = 2.6f * easeOutBack(Mth.clamp(f / 15f, 0, 1));
+            bigText(g, font, "A CREATION OF THE GODS", cx, sh * 0.5f, Math.max(0.1f, ts),
+                    argb((int) (255 * fade), hsv(t * 0.03f, 0.5f, 1f)));
+        }
+    }
+
+    private static void drawSun(GuiGraphicsExtractor g, float cx, float cy, float r, float t, float alpha) {
+        if (r < 1) return;
+        fillCircle(g, cx, cy, r * 2.4f, 1f, argb((int) (25 * alpha), 0xFF8A2A));
+        fillCircle(g, cx, cy, r * 1.6f, 1f, argb((int) (55 * alpha), 0xFFC94A));
+        for (int k = 0; k < 24; k++) {
+            float a = k * (float) (Math.PI * 2 / 24) + t * 0.015f;
+            float len = r * (1.3f + 0.35f * Mth.sin(t * 0.25f + k * 1.7f));
+            line(g, cx + Mth.cos(a) * r, cy + Mth.sin(a) * r, cx + Mth.cos(a) * len, cy + Mth.sin(a) * len, 2,
+                    argb((int) (170 * alpha), 0xFFD86B));
+        }
+        fillCircle(g, cx, cy, r, 1f, argb((int) (255 * alpha), 0xFFE08A));
+        fillCircle(g, cx, cy, r * 0.75f, 1f, argb((int) (255 * alpha), 0xFFF4C0));
+        fillCircle(g, cx - r * 0.25f, cy - r * 0.25f, r * 0.3f, 1f, argb((int) (200 * alpha), 0xFFFFFF));
+    }
+
+    /** Planets made in the forge: one every 2 seconds, flung out from the sun into orbit. */
+    private static void drawForgedPlanets(GuiGraphicsExtractor g, float cx, float cy, float sunR, float t, float since,
+                                          float alpha) {
+        for (int k = 0; k < 6; k++) {
+            float born = 40 * (k + 1);
+            if (since < born) break;
+            float out = easeOutCubic(Mth.clamp((since - born) / 20f, 0, 1));
+            float orbit = (sunR * 1.9f + 14 + k * 16) * out;
+            float a = t * 0.03f / (1 + k * 0.4f) + k * 1.7f;
+            float px = cx + Mth.cos(a) * orbit, py = cy + Mth.sin(a) * orbit * 0.45f;
+            int[] type = PLANET_TYPES[k % PLANET_TYPES.length];
+            float pr = 3 + (k % 3) * 1.5f;
+            if (type[2] != 0) {
+                for (int i = 0; i < 40; i++) {
+                    double ang = i * Math.PI * 2 / 40;
+                    int rx = (int) (px + Math.cos(ang) * pr * 1.9f), ry = (int) (py + Math.sin(ang) * pr * 0.5f);
+                    g.fill(rx, ry, rx + 1, ry + 1, argb((int) (230 * alpha), type[2]));
+                }
+            }
+            fillCircle(g, px, py, pr, 1f, argb((int) (255 * alpha), type[0]));
+            fillCircle(g, px - pr * 0.3f, py - pr * 0.3f, pr * 0.45f, 1f, argb((int) (140 * alpha), type[1]));
+        }
+    }
+
+    /** A giant divine eye in the sky. */
+    private static void drawEye(GuiGraphicsExtractor g, float cx, float cy, float w, float open, float t, int i, float alpha) {
+        if (open < 0.03f || alpha < 0.02f) return;
+        fillCircle(g, cx, cy, w * 1.35f, 0.55f, argb((int) (30 * alpha), 0xFFD86B));
+        for (int k = 0; k < 14; k++) {
+            float a = k * (float) (Math.PI * 2 / 14) + t * 0.01f;
+            float r0 = w * 1.05f, r1 = w * (1.3f + 0.1f * Mth.sin(t * 0.2f + k));
+            line(g, cx + Mth.cos(a) * r0, cy + Mth.sin(a) * r0 * 0.55f, cx + Mth.cos(a) * r1, cy + Mth.sin(a) * r1 * 0.55f,
+                    1, argb((int) (160 * alpha * open), 0xFFE9A8));
+        }
+        fillCircle(g, cx, cy, w, 0.5f * open, argb((int) (255 * alpha), 0xFFF6E0));
+        float ih = w * 0.5f * open;
+        float lookX = Mth.sin(t * 0.03f + i * 2) * w * 0.3f;
+        float lookY = Mth.cos(t * 0.025f + i) * ih * 0.2f;
+        float ir = Math.min(w * 0.38f, ih * 0.95f);
+        if (ir > 1) {
+            float ix = cx + lookX, iy = cy + lookY;
+            fillCircle(g, ix, iy, ir, 1f, argb((int) (255 * alpha), hsv(t * 0.01f + i * 0.33f, 0.8f, 1f)));
+            fillCircle(g, ix, iy, ir * 0.7f, 1f, argb((int) (255 * alpha), hsv(t * 0.01f + i * 0.33f + 0.15f, 0.9f, 0.85f)));
+            fillCircle(g, ix, iy, ir * 0.38f, 1f, argb((int) (255 * alpha), 0x000000));
+            fillCircle(g, ix - ir * 0.3f, iy - ir * 0.3f, ir * 0.15f, 1f, argb((int) (230 * alpha), 0xFFFFFF));
+        }
+        int dots = 80;
+        for (int k = 0; k < dots; k++) {
+            double a = k * Math.PI * 2 / dots;
+            int px = (int) (cx + Math.cos(a) * w), py = (int) (cy + Math.sin(a) * w * 0.5f * open);
+            g.fill(px, py, px + 2, py + 2, argb((int) (255 * alpha), 0xFFD86B));
+        }
+    }
+
+    /** The fake bluescreen, drawn on top of EVERYTHING. */
+    private static void renderBlueScreen(GuiGraphicsExtractor g, Font font, float t, float sl, int sw, int sh) {
+        float b = sl - G_BSOD;
+        if (b < 0 || b >= G_ASCEND - G_BSOD) return;
+        g.fill(0, 0, sw, sh, 0xFF0078D7);
+        int white = 0xFFFFFFFF;
+
+        if (b < 80) {
+            int x = (int) (sw * 0.1f);
+            int y = (int) (sh * 0.1f);
+            g.pose().pushMatrix();
+            g.pose().translate(x, y);
+            g.pose().scale(5f, 5f);
+            g.text(font, ":(", 0, 0, white);
+            g.pose().popMatrix();
+            y += 50;
+            g.text(font, "Your PC ran into a problem and needs to restart.", x, y, white);
+            g.text(font, "Someone paid you so much that reality broke.", x, y + 12, white);
+            int pct = Math.min(100, (int) (b / 72f * 100));
+            pct -= pct % 4;
+            g.text(font, pct + "% complete", x, y + 30, white);
+
+            int qy = y + 48;
+            int cell = 2;
+            for (int i = 0; i < FAKE_QR.length; i++) {
+                for (int j = 0; j < FAKE_QR.length; j++) {
+                    if (FAKE_QR[i][j]) g.fill(x + i * cell, qy + j * cell, x + i * cell + cell, qy + j * cell + cell, white);
+                }
+            }
+            int tx = x + FAKE_QR.length * cell + 8;
+            g.text(font, "For more information, ask the gods.", tx, qy, white);
+            g.text(font, "Stop code: PAYMENT_TOO_POWERFUL", tx, qy + 24, white);
+        } else {
+            bigText(g, font, "...just kidding :)", sw / 2f, sh / 2f - 12, 3f, white);
+            bigText(g, font, "the gods aren't done yet", sw / 2f, sh / 2f + 18, 1.5f, 0xFFFFE08A);
+            for (int i = 0; i < 4; i++) {
+                int gy = RANDOM.nextInt(Math.max(1, sh));
+                int off = RANDOM.nextInt(40) - 20;
+                g.fill(off, gy, sw + off, gy + 2 + RANDOM.nextInt(6), argb(160, RANDOM.nextBoolean() ? 0xFF2A6D : 0x2AF6FF));
+            }
+        }
+    }
+
+    private static void bigText(GuiGraphicsExtractor g, Font font, String text, float cx, float cy, float scale, int color) {
+        g.pose().pushMatrix();
+        g.pose().translate(cx, cy);
+        g.pose().scale(scale, scale);
+        g.centeredText(font, text, 0, -4, color);
+        g.pose().popMatrix();
+    }
+
+    /** Looks like a QR code (corner squares + random dots) but isn't one. */
+    private static boolean[][] makeFakeQr(int n, long seed) {
+        Random r = new Random(seed);
+        boolean[][] q = new boolean[n][n];
+        for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) q[i][j] = r.nextBoolean();
+        int[][] corners = {{0, 0}, {n - 7, 0}, {0, n - 7}};
+        for (int[] c : corners) {
+            for (int i = 0; i < 7; i++) {
+                for (int j = 0; j < 7; j++) {
+                    boolean ring = i == 0 || j == 0 || i == 6 || j == 6;
+                    boolean core = i >= 2 && i <= 4 && j >= 2 && j <= 4;
+                    q[c[0] + i][c[1] + j] = ring || core;
+                }
+            }
+        }
+        return q;
+    }
+
     // =====================================================================
     //  Shared space helpers
     // =====================================================================
@@ -2358,7 +2787,9 @@ public final class PopupRenderer {
     //  Helpers
     // =====================================================================
     private static float boxScale() {
-        return PayPopupConfig.get().scale * (1f + Math.min(tier, 8) * 0.07f);
+        float s = PayPopupConfig.get().scale * (1f + Math.min(tier, 8) * 0.07f);
+        if (tier == 14) s *= Mth.lerp(Mth.clamp((age - SLIDE_IN_TICKS - 60) / 30f, 0, 1), 1f, 0.5f);
+        return s;
     }
 
     /** Main colour for this popup: theme colour, tornado colour, or a moving rainbow for 1B+. */
@@ -2368,6 +2799,7 @@ public final class PopupRenderer {
             if (variant == 4) return hsv((t * 0.03f + offset / 360f) % 1f, 0.8f, 1f);
             return new int[]{0xC9CED6, 0xFF8A1A, 0x3FBF5A, 0xBFEFFF}[variant];
         }
+        if (tier == 14 && age - SLIDE_IN_TICKS < G_ASCEND) return hsv(0.11f + 0.03f * Mth.sin(t * 0.1f + offset * 0.01f), 0.75f, 1f);
         if (tier == 12) return hsv(0.76f + 0.04f * Mth.sin(t * 0.1f + offset), 0.85f, 0.7f + 0.3f * Mth.sin(t * 0.2f));
         float speed = tier >= 13 ? 0.08f : tier >= 8 ? 0.04f : 0.02f;
         return hsv((t * speed + offset / 360f) % 1f, 0.85f, 1f);
